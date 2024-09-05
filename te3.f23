@@ -1,0 +1,18 @@
+program tiny_example_3
+{
+    procedure pr_int( integer i )
+    {
+        string title;
+        title := "printing integer ";
+        print_string(title);
+        print_integer(i);
+        print_string("\n");
+    }
+
+    function integer main()
+    {
+        integer i;
+        i := 441;
+        pr_int( i );
+    }
+}

@@ -1,0 +1,15 @@
+program tiny_example_4
+{
+    function integer main()
+    {
+        integer i;
+        double  a;
+        i := 441;
+        a := ( 3 * i ) / 2.0d0;
+        print_string( "i = " );
+        print_integer( i );
+        print_string( ", a = " );
+        print_double( a );
+        print_string( "\n" );
+    }
+}
