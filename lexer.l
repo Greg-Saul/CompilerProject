@@ -6,12 +6,32 @@
 
 %%
 
+"do"                     { printf("K_DO\n"); }
+"double"                 { printf("K_DOUBLE\n"); }
+"else"                   { printf("K_ELSE\n"); }
+"exit"                   { printf("K_EXIT\n"); }
+"function"               { printf("K_FUNCTION\n"); }
+"if"                     { printf("K_IF\n"); }
+"integer"                { printf("K_INTEGER\n"); }
+"print_double"           { printf("K_PRINT_DOUBLE\n"); }
+"print_integer"          { printf("K_PRINT_INTEGER\n"); }
+"print_string"           { printf("K_PRINT_STRING\n"); }
+"procedure"              { printf("K_PROCEDURE\n"); }
+"program"                { printf("K_PROGRAM\n"); }
+"read_double"            { printf("K_READ_DOUBLE\n"); }
+"read_integer"           { printf("K_READ_INTEGER\n"); }
+"read_string"            { printf("K_READ_STRING\n"); }
+"return"                 { printf("K_RETURN\n"); }
+"string"                 { printf("K_STRING\n"); }
+"then"                   { printf("K_THEN\n"); }
+"until"                  { printf("K_UNTIL\n"); }
+"while"                  { printf("K_WHILE\n"); }
+
 
 [0-9]+                          { printf("ICONSTANT: %s\n", yytext); }
-[a-zA-Z_$][a-zA-Z_$0-9]+        { printf("IDENTIFIER: %s\n", yytext); }
-"="                             { printf("ASSIGNMENT: %s\n", yytext); }
-"+"                             { printf("PLUS: %s\n", yytext); }
-"*"                             { printf("MULTIPLICATION: %s\n", yytext); }
+[a-zA-Z_$][a-zA-Z_$0-9]+        { printf("IDENTIFIER: %s\n", yytext); }   // Work on limiting to only first 32 characters
+// String Constant
+// Floating Point
 [ \t\n]+                        ;
 
 ":="         { printf("ASSIGN\n"); }
