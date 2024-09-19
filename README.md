@@ -9,4 +9,4 @@ Language: C++
 compile instructions:
 
 make
-./lexer < mg.f24
+./lexer < filename
