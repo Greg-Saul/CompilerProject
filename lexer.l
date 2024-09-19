@@ -29,7 +29,7 @@
 
 
 [0-9]+                          { printf("ICONSTANT: %s\n", yytext); }
-[a-zA-Z_$][a-zA-Z_$0-9]+        { printf("IDENTIFIER: %s\n", yytext); }   // Work on limiting to only first 32 characters
+[a-zA-Z_$][a-zA-Z_$0-9]*        { printf("IDENTIFIER: %s\n", yytext); }   // Work on limiting to only first 32 characters
 // String Constant
 // Floating Point
 [ \t\n]+                        ;
