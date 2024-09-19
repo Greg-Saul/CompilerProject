@@ -27,11 +27,12 @@
 "while"                  { printf("K_WHILE\n"); }
 
 
-[0-9]+                          { printf("ICONSTANT: %s\n", yytext); }
-[a-zA-Z_$][a-zA-Z_$0-9]*        { printf("IDENTIFIER: %s\n", yytext); }   // Work on limiting to only first 32 characters
-// String Constant
-// Floating Point
+[0-9]+                              { printf("ICONSTANT: %s\n", yytext); }
+[a-zA-Z_$][a-zA-Z_$0-9]*            { printf("IDENTIFIER: %s\n", yytext); }
+\"([^"\\\n]|\\.)*\"                 {printf("SCONSTANT: %s\n", yytext);}
+-?[0-9]*"."[0-9]*[d|d+|d-]?[0-9]*   {printf("DCONSTANT: %s\n", yytext);} 
 [ \t\n]+                        ;
+
 
 ":="         { printf("ASSIGN\n"); }
 "\\+="       { printf("ASSIGN_PLUS\n"); }
@@ -40,14 +41,14 @@
 "/="         { printf("ASSIGN_DIVIDE\n"); }
 "%="         { printf("ASSIGN_MOD\n"); }
 ","          { printf("COMMA\n"); }
-"//"         { printf("COMMENT\n"); }
+\/\/.*         { printf("COMMENT\n"); }
 "&&"         { printf("DAND\n"); }
 "/"          { printf("DIVIDE\n"); }
 "||"         { printf("DOR\n"); }
 "=="         { printf("DEQ\n"); }
 ">="         { printf("GEQ\n"); }
 ">"          { printf("GT\n"); }
-"\\["        { printf("LBRACKET\n"); }
+"["        { printf("LBRACKET\n"); }
 "<="         { printf("LEQ\n"); }
 "{"          { printf("LCURLY\n"); }
 "("          { printf("LPAREN\n"); }
@@ -55,13 +56,13 @@
 "-"          { printf("MINUS\n"); }
 "--"         { printf("DECREMENT\n"); }
 "%"          { printf("MOD\n"); }
-"\\*"        { printf("MULTIPLY\n"); }
+"*"        { printf("MULTIPLY\n"); }
 "!="         { printf("NE\n"); }
 "!"          { printf("NOT\n"); }
 "\\."        { printf("PERIOD\n"); }
-"\\+"        { printf("PLUS\n"); }
-"\\+\\+"     { printf("INCREMENT\n"); }
-"\\]"        { printf("RBRACKET\n"); }
+"+"        { printf("PLUS\n"); }
+"++"     { printf("INCREMENT\n"); }
+"]"        { printf("RBRACKET\n"); }
 "}"          { printf("RCURLY\n"); }
 ")"          { printf("RPAREN\n"); }
 ";"          { printf("SEMI\n"); }
