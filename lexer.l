@@ -1,5 +1,4 @@
 %{
-    // C code: Headers and other declarations
     #include <stdio.h>
     #include <stdlib.h>
 %}
@@ -68,13 +67,12 @@
 ";"          { printf("SEMI\n"); }
 
 %%
-// User Code Section: Define any additional C functions or helper code.
 
 int main() {
-    yylex();  // Call the lexer
+    yylex();
     return 0;
 }
 
 int yywrap() {
-    return 1; // Required for the lex library to signal end of input
+    return 1;
 }
