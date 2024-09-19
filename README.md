@@ -7,14 +7,14 @@
 Language: C++
 
 ### Lexer Assignment:
-Greg's work - makefile, part of lexer.l
+<strong>Greg's work</strong> - makefile, part of lexer.l
 
-Taylor's work - program_example_tg.f24, part of lexer.l
+<strong>Taylor's work</strong> - program_example_tg.f24, part of lexer.l
 
-Required files: makefile, lexer.l, program_example_tg.f24
+<strong>Required files:</strong> makefile , lexer.l , program_example_tg.f24
 
 
-compile instructions:
+<strong>compile instructions:</strong>
 
-make
+make </br>
 ./lexer < filename
