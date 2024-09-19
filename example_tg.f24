@@ -1,0 +1,16 @@
+program example_tg
+{
+    function integer main()
+    {
+        integer w;
+        integer i;
+        integer n;
+        i := 67;
+        w := 2;
+        n := i + w;
+        
+        print_integer( i );
+        print_integer( w );
+        print_integer( n );
+    }
+}
