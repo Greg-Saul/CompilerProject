@@ -13,7 +13,7 @@ $(LEX_OUT): $(LEX_SRC)
 	$(LEX) $(LEX_SRC)
 
 $(EXEC): $(LEX_OUT)
-	$(CC) -o $(EXEC) $(LEX_OUT) -lfl
+	$(CC) -o $(EXEC) $(LEX_OUT)
 
 clean:
 	rm -f $(LEX_OUT) $(EXEC)
