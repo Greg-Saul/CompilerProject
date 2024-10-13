@@ -18,3 +18,15 @@ Language: C++
 
 make </br>
 ./lexer < filename
+
+## Parser assignment
+
+compile directions below. I haven't finished the makefile and we should go back through and cleaan up the code a bit later.
+
+bison -d parser.y
+flex smallLexer.l
+gcc parser.tab.c lex.yy.c -o parser -ll
+
+
+
+
