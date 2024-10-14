@@ -1,79 +1,105 @@
 %{
-    #include <stdio.h>
-    #include <stdlib.h>
+#include "parser.tab.h"
+#include <string.h>
+#include <stdlib.h>
 %}
 
-%%
+%option noyywrap yylineno
 
-"do"                     { printf("K_DO\n"); }
-"double"                 { printf("K_DOUBLE\n"); }
-"else"                   { printf("K_ELSE\n"); }
-"exit"                   { printf("K_EXIT\n"); }
-"function"               { printf("K_FUNCTION\n"); }
-"if"                     { printf("K_IF\n"); }
-"integer"                { printf("K_INTEGER\n"); }
-"print_double"           { printf("K_PRINT_DOUBLE\n"); }
-"print_integer"          { printf("K_PRINT_INTEGER\n"); }
-"print_string"           { printf("K_PRINT_STRING\n"); }
-"procedure"              { printf("K_PROCEDURE\n"); }
-"program"                { printf("K_PROGRAM\n"); }
-"read_double"            { printf("K_READ_DOUBLE\n"); }
-"read_integer"           { printf("K_READ_INTEGER\n"); }
-"read_string"            { printf("K_READ_STRING\n"); }
-"return"                 { printf("K_RETURN\n"); }
-"string"                 { printf("K_STRING\n"); }
-"then"                   { printf("K_THEN\n"); }
-"until"                  { printf("K_UNTIL\n"); }
-"while"                  { printf("K_WHILE\n"); }
-
-
-[0-9]+                              { printf("ICONSTANT: %s\n", yytext); }
-[a-zA-Z_$][a-zA-Z_$0-9]*            { printf("IDENTIFIER: %s\n", yytext); }
-\"([^"\\\n]|\\.)*\"                 {printf("SCONSTANT: %s\n", yytext);}
--?[0-9]*"."[0-9]*[d|d+|d-]?[0-9]*   {printf("DCONSTANT: %s\n", yytext);} 
-[ \t\n]+                        ;
+K_DO             do
+K_DOUBLE         double
+K_ELSE           else
+K_EXIT           exit
+K_FUNCTION       function
+K_IF             if
+K_INTEGER        integer
+K_PRINT_DOUBLE   print_double
+K_PRINT_INTEGER  print_integer
+K_PRINT_STRING   print_string
+K_PROCEDURE      procedure
+K_PROGRAM        program
+K_READ_DOUBLE    read_double
+K_READ_INTEGER   read_integer
+K_READ_STRING    read_string
+K_RETURN         return
+K_STRING         string
+K_THEN           then
+K_UNTIL          until
+K_WHILE          while
 
 
-":="         { printf("ASSIGN\n"); }
-"\\+="       { printf("ASSIGN_PLUS\n"); }
-"-="         { printf("ASSIGN_MINUS\n"); }
-"\\*="       { printf("ASSIGN_MULTIPLY\n"); }
-"/="         { printf("ASSIGN_DIVIDE\n"); }
-"%="         { printf("ASSIGN_MOD\n"); }
-","          { printf("COMMA\n"); }
-\/\/.*         { printf("COMMENT\n"); }
-"&&"         { printf("DAND\n"); }
-"/"          { printf("DIVIDE\n"); }
-"||"         { printf("DOR\n"); }
-"=="         { printf("DEQ\n"); }
-">="         { printf("GEQ\n"); }
-">"          { printf("GT\n"); }
-"["        { printf("LBRACKET\n"); }
-"<="         { printf("LEQ\n"); }
-"{"          { printf("LCURLY\n"); }
-"("          { printf("LPAREN\n"); }
-"<"          { printf("LT\n"); }
-"-"          { printf("MINUS\n"); }
-"--"         { printf("DECREMENT\n"); }
-"%"          { printf("MOD\n"); }
-"*"        { printf("MULTIPLY\n"); }
-"!="         { printf("NE\n"); }
-"!"          { printf("NOT\n"); }
-"\\."        { printf("PERIOD\n"); }
-"+"        { printf("PLUS\n"); }
-"++"     { printf("INCREMENT\n"); }
-"]"        { printf("RBRACKET\n"); }
-"}"          { printf("RCURLY\n"); }
-")"          { printf("RPAREN\n"); }
-";"          { printf("SEMI\n"); }
+
+IDENTIFIER       [a-zA-Z_$][a-zA-Z_$0-9]* 
+ICONSTANT        [0-9]+
+DCONSTANT        -?[0-9]*"."[0-9]*[d|d+|d-]?[0-9]*
+SCONSTANT        \"([^"\\\n]|\\.)*\" 
+COMMA            ,
 
 %%
 
-int main() {
-    yylex();
-    return 0;
-}
+{K_DO}                   { return K_DO; }
+{K_DOUBLE}               { return K_DOUBLE; }
+{K_ELSE}                 { return K_ELSE; }
+{K_EXIT}                 { return K_EXIT; }
+{K_FUNCTION}             { return K_FUNCTION; }
+{K_IF}                   { return K_IF; }
+{K_INTEGER}              { return K_INTEGER; }
+{K_PRINT_DOUBLE}         { return K_PRINT_DOUBLE; }
+{K_PRINT_INTEGER}        { return K_PRINT_INTEGER; }
+{K_PRINT_STRING}         { return K_PRINT_STRING; }
+{K_PROCEDURE}            { return K_PROCEDURE; }
+{K_PROGRAM}              { return K_PROGRAM; }
+{K_READ_DOUBLE}          { return K_READ_DOUBLE; }
+{K_READ_INTEGER}         { return K_READ_INTEGER; }
+{K_READ_STRING}          { return K_READ_STRING; }
+{K_RETURN}               { return K_RETURN; }
+{K_STRING}               { return K_STRING; }
+{K_THEN}                 { return K_THEN; }
+{K_UNTIL}                { return K_UNTIL; }
+{K_WHILE}                { return K_WHILE; }
 
-int yywrap() {
-    return 1;
-}
+
+{IDENTIFIER}       { yylval.str = strdup(yytext); return IDENTIFIER; }
+{ICONSTANT}        { yylval.int_val = atoi(yytext); return ICONSTANT; }
+{DCONSTANT}        { yylval.double_val = atof(yytext); return DCONSTANT; }
+{SCONSTANT}        { yylval.str = strdup(yytext); return SCONSTANT; }
+
+
+":="         { return ASSIGN; }
+"+="         { return ASSIGN_PLUS; }
+"-="         { return ASSIGN_MINUS; }
+"*="         { return ASSIGN_MULTIPLY; }
+"/="         { return ASSIGN_DIVIDE; }
+"%="         { return ASSIGN_MOD; }
+","          { return COMMA; }
+\/\/.*       { return COMMENT; }
+"&&"         { return DAND; }
+"/"          { return DIVIDE; }
+"||"         { return DOR; }
+"=="         { return DEQ; }
+">="         { return GEQ; }
+">"          { return GT; }
+"["          { return LBRACKET; }
+"<="         { return LEQ; }
+"{"          { return LCURLY; }
+"("          { return LPAREN; }
+"<"          { return LT; }
+"-"          { return MINUS; }
+"--"         { return DECREMENT; }
+"%"          { return MOD; }
+"*"          { return MULTIPLY; }
+"!="         { return NE; }
+"!"          { return NOT; }
+"\."          { return PERIOD; }
+"+"          { return PLUS; }
+"++"         { return INCREMENT; }
+"]"          { return RBRACKET; }
+"}"          { return RCURLY; }
+")"          { return RPAREN; }
+";"          { return SEMI; }
+
+[ \t\r\n]+   ;  // Ignore whitespace
+
+.            { printf("Illegal character: %s\n", yytext); }
+
+%%

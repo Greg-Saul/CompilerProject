@@ -7,7 +7,7 @@ FLEX = flex
 
 # Source files
 BISON_SRC = parser.y
-FLEX_SRC = smallLexer.l
+FLEX_SRC = lexer.l
 
 # Generated files
 BISON_C = parser.tab.c
