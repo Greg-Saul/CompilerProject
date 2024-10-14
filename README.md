@@ -21,14 +21,15 @@ make </br>
 
 ## Parser assignment
 
-compile directions below. I haven't finished the makefile and we should go back through and cleaan up the code a bit later.
+<strong>Greg's work</strong> - parser rules, parse tree
 
-bison -d parser.y
+<strong>Taylor's work</strong> - makefile, parser integration with lexer
 
-flex smallLexer.l
+<strong>Required files:</strong> makefile , parser.y, lexer.l 
 
-gcc parser.tab.c lex.yy.c -o parser -ll
+<strong>compile directions below:</strong>
 
+make </br>
 ./parser < filename
 
 
