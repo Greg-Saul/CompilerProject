@@ -42,9 +42,7 @@ void print_tree(Node *node, int level) {
 }
 
 void walk_tree(Node *node) {
-    printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
-    printf("+ Walking through the Parse Tree Begins Here  +\n");
-    printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
+    
     print_tree(node, 0);
 }
 
@@ -331,11 +329,14 @@ void yyerror(const char *s) {
 // Main function
 int main(void) {
     printf("Parsing started...\n");
+    printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
+    printf("+ Walking through the Parse Tree Begins Here  +\n");
+    printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
     Node *parse_tree = NULL;
     if (yyparse() == 0) {
+        walk_tree(parse_tree);
         printf("Parsing completed successfully.\n");
         // After parsing, walk the parse tree
-        walk_tree(parse_tree);
     } else {
         printf("Parsing failed.\n");
     }
