@@ -29,6 +29,8 @@ flex smallLexer.l
 
 gcc parser.tab.c lex.yy.c -o parser -ll
 
+./parser < filename
+
 
 
 
