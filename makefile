@@ -1,19 +1,37 @@
-# Variables
-LEX = flex
+# Compiler and flags
 CC = gcc
-# Name of your .l file
-LEX_SRC = lexer.l
-LEX_OUT = lex.yy.c
-EXEC = lexer
 
-# Targets
-all: $(EXEC)
+# Bison and Flex
+BISON = bison
+FLEX = flex
 
-$(LEX_OUT): $(LEX_SRC)
-	$(LEX) $(LEX_SRC)
+# Source files
+BISON_SRC = parser.y
+FLEX_SRC = smallLexer.l
 
-$(EXEC): $(LEX_OUT)
-	$(CC) -o $(EXEC) $(LEX_OUT)
+# Generated files
+BISON_C = parser.tab.c
+BISON_H = parser.tab.h
+FLEX_C = lex.yy.c
 
+# Output executable
+TARGET = parser
+
+# Default target
+all: $(TARGET)
+
+# Bison rule
+$(BISON_C) $(BISON_H): $(BISON_SRC)
+	$(BISON) -d $(BISON_SRC)
+
+# Flex rule
+$(FLEX_C): $(FLEX_SRC)
+	$(FLEX) $(FLEX_SRC)
+
+# Compilation and linking
+$(TARGET): $(BISON_C) $(FLEX_C)
+	$(CC) $^ -o $@ 
+
+# Clean up
 clean:
-	rm -f $(LEX_OUT) $(EXEC)
+	rm -f $(TARGET) $(BISON_C) $(BISON_H) $(FLEX_C)
