@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-
-
 typedef struct Node {
     int node_id;
     char *type;
