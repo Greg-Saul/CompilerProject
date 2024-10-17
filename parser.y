@@ -13,7 +13,7 @@ typedef struct Node {
 void yyerror(const char *s);
 int yylex(void);
 
-int current_node_id = 1; // Global counter for node IDs
+int current_node_id = 1;
 
 Node* create_node(const char *type) {
     Node *node = (Node*)malloc(sizeof(Node));
