@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+
+
 typedef struct Node {
     int node_id;
     char *type;
@@ -31,7 +34,7 @@ void add_child(Node *parent, Node *child) {
 
 void print_tree(Node *node, int level) {
     if(node == NULL) return;
-    for(int i = 0; i < level; i++) printf("  ");
+    for(int i = 0; i < level; i++) /*printf("  ")*/;
     printf("** Node %d: %s\n", node->node_id, node->type);
     for(int i = 0; i < node->child_count; i++) {
         print_tree(node->children[i], level + 1);
@@ -42,6 +45,8 @@ void walk_tree(Node *node) {
     
     print_tree(node, 0);
 }
+
+Node *parse_tree = NULL;
 
 %}
 
@@ -71,7 +76,10 @@ void walk_tree(Node *node) {
 %%
 
 start : program
-      ;
+    {
+        parse_tree = $1;
+    }
+    ;
 
 program : K_PROGRAM IDENTIFIER LCURLY function_block RCURLY
         {
@@ -81,32 +89,19 @@ program : K_PROGRAM IDENTIFIER LCURLY function_block RCURLY
             add_child(id_node, create_node($2));
             add_child($$, id_node);
 
-            add_child($$, $4); // $4 is of type <node>
-
-            printf("** Node %d: Reduced: program -> K_PROGRAM IDENTIFIER LCURLY function_block RCURLY\n", $$->node_id);
-            printf("**** program -> K_PROGRAM\n");
-            printf("**** program -> IDENTIFIER %s\n", $2);
-            printf("**** program -> LCURLY\n");
-            printf("**** program -> function_block\n");
-            printf("**** program -> RCURLY\n");
+            add_child($$, $4);
         }
         ;
 
 function_block : function function_block
                {
                    $$ = create_node("function_block");
-                   add_child($$, $1); // $1 is of type <node>
-                   add_child($$, $2); // $2 is of type <node>
-
-                   printf("** Node %d: Reduced: function_block -> function function_block\n", $$->node_id);
-                   printf("**** function_block -> function (Node %d)\n", $1->node_id);
-                   printf("**** function_block -> function_block (Node %d)\n", $2->node_id);
+                   add_child($$, $1);
+                   add_child($$, $2);
                }
                | /* empty */
                {
                    $$ = create_node("empty");
-
-                   printf("** Node %d: Reduced: function_block -> empty\n", $$->node_id);
                }
                ;
 
@@ -122,58 +117,33 @@ function : K_FUNCTION K_INTEGER IDENTIFIER LPAREN RPAREN LCURLY statement_block 
              add_child(id_node, create_node($3));
              add_child($$, id_node);
 
-             add_child($$, $7); // $7 is of type <node>
-
-             printf("** Node %d: Reduced: function -> K_FUNCTION K_INTEGER IDENTIFIER LPAREN RPAREN LCURLY statement_block RCURLY\n", $$->node_id);
-             printf("**** function -> K_FUNCTION\n");
-             printf("**** function -> K_INTEGER\n");
-             printf("**** function -> IDENTIFIER %s\n", $3);
-             printf("**** function -> LPAREN\n");
-             printf("**** function -> RPAREN\n");
-             printf("**** function -> LCURLY\n");
-             printf("**** function -> statement_block (Node %d)\n", $7->node_id);
-             printf("**** function -> RCURLY\n");
+             add_child($$, $7);
          }
          ;
 
 statement_block : statement statement_block
                {
                    $$ = create_node("statement_block");
-                   add_child($$, $1); // $1 is of type <node>
-                   add_child($$, $2); // $2 is of type <node>
-
-                   printf("** Node %d: Reduced: statement_block -> statement statement_block\n", $$->node_id);
-                   printf("**** statement_block -> statement (Node %d)\n", $1->node_id);
-                   printf("**** statement_block -> statement_block (Node %d)\n", $2->node_id);
+                   add_child($$, $1);
+                   add_child($$, $2);
                }
                | /* empty */
                {
                    $$ = create_node("empty");
-
-                   printf("** Node %d: Reduced: statement_block -> empty\n", $$->node_id);
                }
                ;
 
 statement : declare SEMI
           {
-              $$ = $1; // $1 is of type <node>
-              printf("** Node %d: Reduced: statement -> declare SEMI\n", $$->node_id);
-              printf("**** statement -> declare (Node %d)\n", $1->node_id);
-              printf("**** statement -> SEMI\n");
+              $$ = $1;
           }
           | assign SEMI
           {
-              $$ = $1; // $1 is of type <node>
-              printf("** Node %d: Reduced: statement -> assign SEMI\n", $$->node_id);
-              printf("**** statement -> assign (Node %d)\n", $1->node_id);
-              printf("**** statement -> SEMI\n");
+              $$ = $1;
           }
           | print_statement SEMI
           {
-              $$ = $1; // $1 is of type <node>
-              printf("** Node %d: Reduced: statement -> print_statement SEMI\n", $$->node_id);
-              printf("**** statement -> print_statement (Node %d)\n", $1->node_id);
-              printf("**** statement -> SEMI\n");
+              $$ = $1;
           }
           ;
 
@@ -188,42 +158,26 @@ declare : K_INTEGER IDENTIFIER
             Node *id_node = create_node("IDENTIFIER");
             add_child(id_node, create_node($2));
             add_child($$, id_node);
-
-            printf("** Node %d: Reduced: declare -> K_INTEGER IDENTIFIER\n", $$->node_id);
-            printf("**** declare -> K_INTEGER\n");
-            printf("**** declare -> IDENTIFIER %s\n", $2);
         }
         ;
 
 print_statement : K_PRINT_INTEGER LPAREN IDENTIFIER RPAREN
-                {
-                    $$ = create_node("print_integer");
+        {
+            $$ = create_node("print_integer");
 
-                    Node *id_node = create_node("IDENTIFIER");
-                    add_child(id_node, create_node($3));
-                    add_child($$, id_node);
+            Node *id_node = create_node("IDENTIFIER");
+            add_child(id_node, create_node($3));
+            add_child($$, id_node);
+        }
+        | K_PRINT_STRING LPAREN SCONSTANT RPAREN
+        {
+            $$ = create_node("print_string");
 
-                    printf("** Node %d: Reduced: print_statement -> K_PRINT_INTEGER LPAREN IDENTIFIER RPAREN\n", $$->node_id);
-                    printf("**** print_integer -> K_PRINT_INTEGER\n");
-                    printf("**** print_integer -> LPAREN\n");
-                    printf("**** print_integer -> IDENTIFIER %s\n", $3);
-                    printf("**** print_integer -> RPAREN\n");
-                }
-                | K_PRINT_STRING LPAREN SCONSTANT RPAREN
-                {
-                    $$ = create_node("print_string");
-
-                    Node *str_node = create_node("SCONSTANT");
-                    add_child(str_node, create_node($3));
-                    add_child($$, str_node);
-
-                    printf("** Node %d: Reduced: print_statement -> K_PRINT_STRING LPAREN SCONSTANT RPAREN\n", $$->node_id);
-                    printf("**** print_string -> K_PRINT_STRING\n");
-                    printf("**** print_string -> LPAREN\n");
-                    printf("**** print_string -> SCONSTANT %s\n", $3);
-                    printf("**** print_string -> RPAREN\n");
-                }
-                ;
+            Node *str_node = create_node("SCONSTANT");
+            add_child(str_node, create_node($3));
+            add_child($$, str_node);
+        }
+        ;
 
 assign : IDENTIFIER ASSIGN ICONSTANT
        {
@@ -238,10 +192,6 @@ assign : IDENTIFIER ASSIGN ICONSTANT
            sprintf(buffer, "%d", $3);
            add_child(val_node, create_node(buffer));
            add_child($$, val_node);
-           printf("** Node %d: Reduced: assign -> IDENTIFIER ASSIGN ICONSTANT\n", $$->node_id);
-           printf("**** assign -> IDENTIFIER %s\n", $1);
-           printf("**** assign -> ASSIGN\n");
-           printf("**** assign -> ICONSTANT %d\n", $3);
        }
        | IDENTIFIER ASSIGN DCONSTANT
        {
@@ -256,10 +206,6 @@ assign : IDENTIFIER ASSIGN ICONSTANT
            sprintf(buffer, "%f", $3);
            add_child(val_node, create_node(buffer));
            add_child($$, val_node);
-           printf("** Node %d: Reduced: assign -> IDENTIFIER ASSIGN DCONSTANT\n", $$->node_id);
-           printf("**** assign -> IDENTIFIER %s\n", $1);
-           printf("**** assign -> ASSIGN\n");
-           printf("**** assign -> DCONSTANT %f\n", $3);
        }
        | IDENTIFIER ASSIGN IDENTIFIER
        {
@@ -272,11 +218,6 @@ assign : IDENTIFIER ASSIGN ICONSTANT
            Node *rhs_node = create_node("IDENTIFIER");
            add_child(rhs_node, create_node($3));
            add_child($$, rhs_node);
-
-           printf("** Node %d: Reduced: assign -> IDENTIFIER ASSIGN IDENTIFIER\n", $$->node_id);
-           printf("**** assign -> IDENTIFIER %s\n", $1);
-           printf("**** assign -> ASSIGN\n");
-           printf("**** assign -> IDENTIFIER %s\n", $3);
        }
        ;
 
@@ -288,16 +229,15 @@ void yyerror(const char *s) {
 
 int main(void) {
     printf("Parsing started...\n");
-    printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
-    printf("+ Walking through the Parse Tree Begins Here  +\n");
-    printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
-    Node *parse_tree = NULL;
     if (yyparse() == 0) {
-        walk_tree(parse_tree);
         printf("Parsing completed successfully.\n");
-        // After parsing, walk the parse tree
+        printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
+        printf("+ Walking through the Parse Tree Begins Here  +\n");
+        printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
+        walk_tree(parse_tree);
     } else {
         printf("Parsing failed.\n");
     }
+
     return 0;
 }
