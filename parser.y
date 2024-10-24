@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+// #include "symbol.c"
+// #include "parseTree.c"
 
-#define MAX_SYMBOLS 100
+#define MAX_SYMBOLS 50
 
 typedef struct Symbol {
     char *key;
@@ -13,10 +15,18 @@ typedef struct Symbol {
 } Symbol;
 
 typedef struct SymbolTable {
-    Symbol *head;
+    Symbol *table[MAX_SYMBOLS];
 } SymbolTable;
 
-SymbolTable symbol_table = { NULL };
+SymbolTable symbol_table;
+
+unsigned int hash(const char *key) {
+    unsigned int hash = 0;
+    while (*key) {
+        hash = (hash << 5) + *key++;
+    }
+    return hash % MAX_SYMBOLS;
+}
 
 Symbol* create_symbol(char *key, char *type, char *value) {
     Symbol *new_symbol = (Symbol*)malloc(sizeof(Symbol));
@@ -28,44 +38,72 @@ Symbol* create_symbol(char *key, char *type, char *value) {
 }
 
 void add_symbol(char *key, char *type, char *value) {
-    if (strcmp(type, "ICONSTANT") == 0) {
-        char *normalized_key = (char*)malloc(20);
-        snprintf(normalized_key, 20, "%d", atoi(key));
-        Symbol *current = symbol_table.head;
-        while (current != NULL) {
-            if (strcmp(current->key, normalized_key) == 0) {
+    unsigned int index = hash(key);
+    Symbol *new_symbol = create_symbol(key, type, value);
+
+    if (symbol_table.table[index] == NULL) {
+        symbol_table.table[index] = new_symbol;
+    } else {
+        Symbol *current = symbol_table.table[index];
+        while (current->next != NULL) {
+            if (strcmp(current->key, key) == 0) {
                 printf("Symbol '%s' already exists.\n", key);
-                free(normalized_key);
+                free(new_symbol->key);
+                free(new_symbol->type);
+                free(new_symbol->value);
+                free(new_symbol);
                 return;
             }
             current = current->next;
         }
-        free(normalized_key);
+        if (strcmp(current->key, key) == 0) {
+            printf("Symbol '%s' already exists.\n", key);
+            free(new_symbol->key);
+            free(new_symbol->type);
+            free(new_symbol->value);
+            free(new_symbol);
+            return;
+        }
+        current->next = new_symbol;
     }
+}
 
-    Symbol *new_symbol = create_symbol(key, type, value);
-    new_symbol->next = symbol_table.head;
-    symbol_table.head = new_symbol;
+void update_symbol_value(char *key, char *new_value) {
+    unsigned int index = hash(key);
+    Symbol *symbol = symbol_table.table[index];
+
+    while (symbol != NULL) {
+        if (strcmp(symbol->key, key) == 0) {
+            free(symbol->value);
+            symbol->value = strdup(new_value);
+            return;
+        }
+        symbol = symbol->next;
+    }
 }
 
 void print_symbol_table() {
-    printf("\nSymbol Table:\n");
-    Symbol *current = symbol_table.head;
-    while (current != NULL) {
-        printf("Key: %s, Type: %s, Value: %s\n", current->key, current->type, current->value);
-        current = current->next;
+    for (int i = 0; i < MAX_SYMBOLS; i++) {
+        Symbol *current = symbol_table.table[i];
+        while (current != NULL) {
+            printf("Key: %s, Type: %s, Value: %s\n", current->key, current->type, current->value);
+            current = current->next;
+        }
     }
 }
 
 void free_symbol_table() {
-    Symbol *current = symbol_table.head;
-    while (current != NULL) {
-        Symbol *temp = current;
-        current = current->next;
-        free(temp->key);
-        free(temp->type);
-        free(temp->value);
-        free(temp);
+    for (int i = 0; i < MAX_SYMBOLS; i++) {
+        Symbol *current = symbol_table.table[i];
+        while (current != NULL) {
+            Symbol *temp = current;
+            current = current->next;
+            free(temp->key);
+            free(temp->type);
+            free(temp->value);
+            free(temp);
+        }
+        symbol_table.table[i] = NULL;
     }
 }
 
@@ -97,7 +135,7 @@ void add_child(Node *parent, Node *child) {
 
 void print_tree(Node *node, int level) {
     if (node == NULL) return;
-    for (int i = 0; i < level; i++) printf("  ");
+    for (int i = 0; i < level; i++);
     printf("** Node %d: %s\n", node->node_id, node->type);
     for (int i = 0; i < node->child_count; i++) {
         print_tree(node->children[i], level + 1);
@@ -232,7 +270,9 @@ assign : IDENTIFIER ASSIGN ICONSTANT {
     char buffer[20];
     sprintf(buffer, "%d", $3);
     add_child(val_node, create_node(buffer));
-    add_symbol($1, "ICONSTANT", buffer);
+
+    update_symbol_value($1, buffer);
+
     add_child($$, val_node);
 }
 | IDENTIFIER ASSIGN DCONSTANT {
@@ -244,7 +284,9 @@ assign : IDENTIFIER ASSIGN ICONSTANT {
     char buffer[20];
     sprintf(buffer, "%f", $3);
     add_child(val_node, create_node(buffer));
-    add_symbol($1, "DCONSTANT", buffer);
+
+    update_symbol_value($1, buffer);
+
     add_child($$, val_node);
 }
 | IDENTIFIER ASSIGN IDENTIFIER {
@@ -265,11 +307,23 @@ void yyerror(const char *s) {
 }
 
 int main(void) {
-    printf("Starting parsing...\n");
-    yyparse();
-    printf("Parse Tree:\n");
-    walk_tree(parse_tree);
+    printf("Parsing started...\n");
+	if (yyparse() == 0) {
+		printf("Parsing completed successfully.\n");
+		printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
+		printf("+ Walking through the Parse Tree Begins Here  +\n");
+		printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
+		walk_tree(parse_tree);
+	} 
+    else {
+		printf("Parsing failed.\n");
+	}
+
+    printf("\n\n++++++++++++++++++++++++++++++++++++++++++++++++\n");
+    printf("+             Symbol Table Elements            +\n");
+    printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
     print_symbol_table();
     free_symbol_table();
+
     return 0;
 }
