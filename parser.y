@@ -3,6 +3,72 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_SYMBOLS 100
+
+typedef struct Symbol {
+    char *key;
+    char *type;
+    char *value;
+    struct Symbol *next;
+} Symbol;
+
+typedef struct SymbolTable {
+    Symbol *head;
+} SymbolTable;
+
+SymbolTable symbol_table = { NULL };
+
+Symbol* create_symbol(char *key, char *type, char *value) {
+    Symbol *new_symbol = (Symbol*)malloc(sizeof(Symbol));
+    new_symbol->key = strdup(key);
+    new_symbol->type = strdup(type);
+    new_symbol->value = strdup(value);
+    new_symbol->next = NULL;
+    return new_symbol;
+}
+
+void add_symbol(char *key, char *type, char *value) {
+    if (strcmp(type, "ICONSTANT") == 0) {
+        char *normalized_key = (char*)malloc(20);
+        snprintf(normalized_key, 20, "%d", atoi(key));
+        Symbol *current = symbol_table.head;
+        while (current != NULL) {
+            if (strcmp(current->key, normalized_key) == 0) {
+                printf("Symbol '%s' already exists.\n", key);
+                free(normalized_key);
+                return;
+            }
+            current = current->next;
+        }
+        free(normalized_key);
+    }
+
+    Symbol *new_symbol = create_symbol(key, type, value);
+    new_symbol->next = symbol_table.head;
+    symbol_table.head = new_symbol;
+}
+
+void print_symbol_table() {
+    printf("\nSymbol Table:\n");
+    Symbol *current = symbol_table.head;
+    while (current != NULL) {
+        printf("Key: %s, Type: %s, Value: %s\n", current->key, current->type, current->value);
+        current = current->next;
+    }
+}
+
+void free_symbol_table() {
+    Symbol *current = symbol_table.head;
+    while (current != NULL) {
+        Symbol *temp = current;
+        current = current->next;
+        free(temp->key);
+        free(temp->type);
+        free(temp->value);
+        free(temp);
+    }
+}
+
 typedef struct Node {
     int node_id;
     char *type;
@@ -30,16 +96,15 @@ void add_child(Node *parent, Node *child) {
 }
 
 void print_tree(Node *node, int level) {
-    if(node == NULL) return;
-    for(int i = 0; i < level; i++) /*printf("  ")*/;
+    if (node == NULL) return;
+    for (int i = 0; i < level; i++) printf("  ");
     printf("** Node %d: %s\n", node->node_id, node->type);
-    for(int i = 0; i < node->child_count; i++) {
+    for (int i = 0; i < node->child_count; i++) {
         print_tree(node->children[i], level + 1);
     }
 }
 
 void walk_tree(Node *node) {
-    
     print_tree(node, 0);
 }
 
@@ -70,171 +135,141 @@ Node *parse_tree = NULL;
 
 %start start
 
-%%
+%% 
 
-start : program
-    {
-        parse_tree = $1;
-    }
-    ;
+start : program {
+    parse_tree = $1;
+}
+;
 
-program : K_PROGRAM IDENTIFIER LCURLY function_block RCURLY
-        {
-            $$ = create_node("program");
+program : K_PROGRAM IDENTIFIER LCURLY function_block RCURLY {
+    $$ = create_node("program");
+    Node *id_node = create_node("IDENTIFIER");
+    add_child(id_node, create_node($2));
+    add_symbol($2, "program", "N/A");
+    add_child($$, id_node);
+    add_child($$, $4);
+}
+;
 
-            Node *id_node = create_node("IDENTIFIER");
-            add_child(id_node, create_node($2));
-            add_child($$, id_node);
+function_block : function function_block {
+    $$ = create_node("function_block");
+    add_child($$, $1);
+    add_child($$, $2);
+}
+| {
+    $$ = create_node("empty");
+}
+;
 
-            add_child($$, $4);
-        }
-        ;
+function : K_FUNCTION K_INTEGER IDENTIFIER LPAREN RPAREN LCURLY statement_block RCURLY {
+    $$ = create_node("function");
+    Node *return_type = create_node("K_INTEGER");
+    add_child(return_type, create_node("integer"));
+    add_child($$, return_type);
+    Node *id_node = create_node("IDENTIFIER");
+    add_child(id_node, create_node($3));
+    add_symbol($3, "integer function", "N/A");
+    add_child($$, id_node);
+    add_child($$, $7);
+}
+;
 
-function_block : function function_block
-               {
-                   $$ = create_node("function_block");
-                   add_child($$, $1);
-                   add_child($$, $2);
-               }
-               | /* empty */
-               {
-                   $$ = create_node("empty");
-               }
-               ;
+statement_block : statement statement_block {
+    $$ = create_node("statement_block");
+    add_child($$, $1);
+    add_child($$, $2);
+}
+| {
+    $$ = create_node("empty");
+}
+;
 
-function : K_FUNCTION K_INTEGER IDENTIFIER LPAREN RPAREN LCURLY statement_block RCURLY
-         {
-             $$ = create_node("function");
+statement : declare SEMI {
+    $$ = $1;
+}
+| assign SEMI {
+    $$ = $1;
+}
+| print_statement SEMI {
+    $$ = $1;
+}
+;
 
-             Node *return_type = create_node("K_INTEGER");
-             add_child(return_type, create_node("integer"));
-             add_child($$, return_type);
+declare : K_INTEGER IDENTIFIER {
+    $$ = create_node("declare");
+    Node *type_node = create_node("K_INTEGER");
+    add_child(type_node, create_node("integer"));
+    add_child($$, type_node);
+    Node *id_node = create_node("IDENTIFIER");
+    add_child(id_node, create_node($2));
+    add_symbol($2, "integer", "N/A");
+    add_child($$, id_node);
+}
+;
 
-             Node *id_node = create_node("IDENTIFIER");
-             add_child(id_node, create_node($3));
-             add_child($$, id_node);
+print_statement : K_PRINT_INTEGER LPAREN IDENTIFIER RPAREN {
+    $$ = create_node("print_integer");
+    Node *id_node = create_node("IDENTIFIER");
+    add_child(id_node, create_node($3));
+    add_child($$, id_node);
+}
+| K_PRINT_STRING LPAREN SCONSTANT RPAREN {
+    $$ = create_node("print_string");
+    Node *str_node = create_node("SCONSTANT");
+    add_child(str_node, create_node($3));
+    add_symbol($3, "SCONSTANT", $3);
+    add_child($$, str_node);
+}
+;
 
-             add_child($$, $7);
-         }
-         ;
+assign : IDENTIFIER ASSIGN ICONSTANT {
+    $$ = create_node("assign");
+    Node *lhs_node = create_node("IDENTIFIER");
+    add_child(lhs_node, create_node($1));
+    add_child($$, lhs_node);
+    Node *val_node = create_node("ICONSTANT");
+    char buffer[20];
+    sprintf(buffer, "%d", $3);
+    add_child(val_node, create_node(buffer));
+    add_symbol($1, "ICONSTANT", buffer);
+    add_child($$, val_node);
+}
+| IDENTIFIER ASSIGN DCONSTANT {
+    $$ = create_node("assign");
+    Node *lhs_node = create_node("IDENTIFIER");
+    add_child(lhs_node, create_node($1));
+    add_child($$, lhs_node);
+    Node *val_node = create_node("DCONSTANT");
+    char buffer[20];
+    sprintf(buffer, "%f", $3);
+    add_child(val_node, create_node(buffer));
+    add_symbol($1, "DCONSTANT", buffer);
+    add_child($$, val_node);
+}
+| IDENTIFIER ASSIGN IDENTIFIER {
+    $$ = create_node("assign");
+    Node *lhs_node = create_node("IDENTIFIER");
+    add_child(lhs_node, create_node($1));
+    add_child($$, lhs_node);
+    Node *rhs_node = create_node("IDENTIFIER");
+    add_child(rhs_node, create_node($3));
+    add_child($$, rhs_node);
+}
+;
 
-statement_block : statement statement_block
-               {
-                   $$ = create_node("statement_block");
-                   add_child($$, $1);
-                   add_child($$, $2);
-               }
-               | /* empty */
-               {
-                   $$ = create_node("empty");
-               }
-               ;
-
-statement : declare SEMI
-          {
-              $$ = $1;
-          }
-          | assign SEMI
-          {
-              $$ = $1;
-          }
-          | print_statement SEMI
-          {
-              $$ = $1;
-          }
-          ;
-
-declare : K_INTEGER IDENTIFIER
-        {
-            $$ = create_node("declare");
-
-            Node *type_node = create_node("K_INTEGER");
-            add_child(type_node, create_node("integer"));
-            add_child($$, type_node);
-
-            Node *id_node = create_node("IDENTIFIER");
-            add_child(id_node, create_node($2));
-            add_child($$, id_node);
-        }
-        ;
-
-print_statement : K_PRINT_INTEGER LPAREN IDENTIFIER RPAREN
-        {
-            $$ = create_node("print_integer");
-
-            Node *id_node = create_node("IDENTIFIER");
-            add_child(id_node, create_node($3));
-            add_child($$, id_node);
-        }
-        | K_PRINT_STRING LPAREN SCONSTANT RPAREN
-        {
-            $$ = create_node("print_string");
-
-            Node *str_node = create_node("SCONSTANT");
-            add_child(str_node, create_node($3));
-            add_child($$, str_node);
-        }
-        ;
-
-assign : IDENTIFIER ASSIGN ICONSTANT
-       {
-           $$ = create_node("assign");
-
-           Node *lhs_node = create_node("IDENTIFIER");
-           add_child(lhs_node, create_node($1));
-           add_child($$, lhs_node);
-
-           Node *val_node = create_node("ICONSTANT");
-           char buffer[20];
-           sprintf(buffer, "%d", $3);
-           add_child(val_node, create_node(buffer));
-           add_child($$, val_node);
-       }
-       | IDENTIFIER ASSIGN DCONSTANT
-       {
-           $$ = create_node("assign");
-
-           Node *lhs_node = create_node("IDENTIFIER");
-           add_child(lhs_node, create_node($1));
-           add_child($$, lhs_node);
-
-           Node *val_node = create_node("DCONSTANT");
-           char buffer[20];
-           sprintf(buffer, "%f", $3);
-           add_child(val_node, create_node(buffer));
-           add_child($$, val_node);
-       }
-       | IDENTIFIER ASSIGN IDENTIFIER
-       {
-           $$ = create_node("assign");
-
-           Node *lhs_node = create_node("IDENTIFIER");
-           add_child(lhs_node, create_node($1));
-           add_child($$, lhs_node);
-
-           Node *rhs_node = create_node("IDENTIFIER");
-           add_child(rhs_node, create_node($3));
-           add_child($$, rhs_node);
-       }
-       ;
-
-%%
+%% 
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Syntax error: %s\n", s);
+    fprintf(stderr, "Error: %s\n", s);
 }
 
 int main(void) {
-    printf("Parsing started...\n");
-    if (yyparse() == 0) {
-        printf("Parsing completed successfully.\n");
-        printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
-        printf("+ Walking through the Parse Tree Begins Here  +\n");
-        printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
-        walk_tree(parse_tree);
-    } else {
-        printf("Parsing failed.\n");
-    }
-
+    printf("Starting parsing...\n");
+    yyparse();
+    printf("Parse Tree:\n");
+    walk_tree(parse_tree);
+    print_symbol_table();
+    free_symbol_table();
     return 0;
 }
