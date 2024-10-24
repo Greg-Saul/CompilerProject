@@ -32,6 +32,32 @@ make </br>
 make </br>
 ./parser < filename
 
+## Symbol table assignment
+
+We all worked together on the code in the library and contributed equally
+
+our symbol table is just a part of out parser.y file (for now)
+
+run instructions
+
+<strong>compile directions below:</strong>
+
+make
+
+./parser < filename
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
