@@ -310,9 +310,9 @@ int main(void) {
     printf("Parsing started...\n");
 	if (yyparse() == 0) {
 		printf("Parsing completed successfully.\n");
-		printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
+		printf("+++++++++++++++++++++++++++++++++++++++++++++++\n");
 		printf("+ Walking through the Parse Tree Begins Here  +\n");
-		printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
+		printf("+++++++++++++++++++++++++++++++++++++++++++++++\n");
 		walk_tree(parse_tree);
 	} 
     else {
