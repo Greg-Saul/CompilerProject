@@ -46,7 +46,23 @@ make
 
 ./parser < filename
 
+## Code Generator assignment
 
+Greg did most of the work for te1.f24, Taylor did most of the work for te2.f24, however all work was done working together.
+
+our code generator is just a part of out parser.y file (for now)
+
+run instructions
+
+<strong>compile directions below:</strong>
+
+make
+
+./parser < filename
+
+gcc f24.c -o f24 -lm
+
+./f24
 
 
 
