@@ -32,8 +32,7 @@ K_WHILE          while
 IDENTIFIER       [a-zA-Z_$][a-zA-Z_$0-9]* 
 ICONSTANT        [0-9]+
 DCONSTANT        -?[0-9]*"."[0-9]*[d|d+|d-]?[0-9]*
-SCONSTANT        \"([^"\\\n]|\\.)*\" 
-COMMA            ,
+SCONSTANT        \"([^"\\\n]|\\.)*\"
 
 %%
 
