@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// #include "symbol.c"
-// #include "parseTree.c"
 
 #define MAX_SYMBOLS 50
 
@@ -139,7 +137,7 @@ void print_tree(Node *node, int level) {
     printf("** Node %d: %s\n", node->node_id, node->type);
     for (int i = 0; i < node->child_count; i++) {
         print_tree(node->children[i], level + 1);
-    }
+    }printf("  ");
 }
 
 void walk_tree(Node *node) {
@@ -306,6 +304,53 @@ void yyerror(const char *s) {
     fprintf(stderr, "Error: %s\n", s);
 }
 
+
+void gen(Node *node, int level, FILE *file) {
+    if (node == NULL) return;
+
+    if (strcmp(node->type, "declare") == 0) {
+        fprintf(file, "\tSR -= 1;\n");
+    }
+    else if (strcmp(node->type, "assign") == 0) {
+        Node *lhs_node = node->children[0];
+        Node *rhs_node = node->children[1];
+
+        if (strcmp(rhs_node->type, "ICONSTANT") == 0) {
+            fprintf(file, "\tR[1] = %s;\n", rhs_node->children[0]->type); 
+            fprintf(file, "\tF24_Time += 1;\n");
+
+            fprintf(file, "\tMem[SR] = R[1];\n");
+            fprintf(file, "\tF24_Time += (20+1);\n");
+        }
+        else if (strcmp(rhs_node->type, "IDENTIFIER") == 0) {
+            fprintf(file, "\tR[1] = Mem[SR];\n");
+            fprintf(file, "\tF24_Time += (20+1);\n");
+
+            fprintf(file, "\tMem[SR] = R[1];\n");
+            fprintf(file, "\tF24_Time += (20+1);\n");
+        }
+    }
+    else if (strcmp(node->type, "print_integer") == 0) {
+        fprintf(file, "\tprint_int(Mem[SR]);\n");
+        fprintf(file, "\tF24_Time += (100+20);\n");
+    }
+    else if (strcmp(node->type, "print_string") == 0) {
+        Node *string_node = node->children[0];
+        fprintf(file, "\tstrcpy(SMem, %s);\n", string_node->children[0]->type);
+        fprintf(file, "\tF24_Time += (20+1);\n");
+        fprintf(file, "\tprint_string(SMem);\n");
+        fprintf(file, "\tF24_Time += (100+20);\n");
+    }
+
+    for (int i = 0; i < node->child_count; i++) {
+        gen(node->children[i], level + 1, file);
+    }
+}
+
+void generate_code(Node *node, FILE *file) {
+    gen(node, 0, file);
+}
+
 int main(void) {
     printf("Parsing started...\n");
 	if (yyparse() == 0) {
@@ -318,6 +363,13 @@ int main(void) {
     else {
 		printf("Parsing failed.\n");
 	}
+
+    FILE *file = fopen("yourmain.h", "w");
+    fprintf(file, "int yourmain()\n{\n");
+    generate_code(parse_tree, file);
+    fprintf(file, "\treturn 0;");
+    fprintf(file, "\n}");
+    fclose(file);
 
     printf("\n\n++++++++++++++++++++++++++++++++++++++++++++++++\n");
     printf("+             Symbol Table Elements            +\n");
