@@ -72,7 +72,7 @@ COMMA            ,
 "/="         { return ASSIGN_DIVIDE; }
 "%="         { return ASSIGN_MOD; }
 ","          { return COMMA; }
-\/\/.*       { return COMMENT; }
+\/\/.*       ;
 "&&"         { return DAND; }
 "/"          { return DIVIDE; }
 "||"         { return DOR; }
