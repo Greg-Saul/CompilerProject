@@ -102,3 +102,8 @@ SCONSTANT        \"([^"\\\n]|\\.)*\"
 .            { printf("Illegal character: %s\n", yytext); }
 
 %%
+
+
+void yyerror(const char *s) {
+    fprintf(stderr,"Error | Line: %d\n%s\n",yylineno,s);
+}
