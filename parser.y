@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #define MAX_SYMBOLS 50
 
 typedef struct Symbol {
@@ -168,12 +169,16 @@ Node *parse_tree = NULL;
 %token DEQ GEQ GT LBRACKET LT MINUS DECREMENT MOD MULTIPLY NE NOT PERIOD
 %token PLUS INCREMENT RBRACKET LEQ
 
-%type <node> start program function_block function statement_block statement
-%type <node> declare_statement assign_statement print_statement
+%type <node> start program function_block function statement_block statement parameters
+%type <node> declare_statement assign_statement print_statement input_statement loop_statement
+%type <node> conditional_statement procedure_call expression simple_expression term condition
+%type <node> argument_list return_statement parameter procedure else while type parameter_list
+
+
 
 %start start
 
-%% 
+%%
 
 start : program {
     parse_tree = $1;
@@ -186,7 +191,8 @@ program : K_PROGRAM IDENTIFIER LCURLY function_block statement_block RCURLY {
     add_child(id_node, create_node($2));
     add_symbol($2, "program", "N/A");
     add_child($$, id_node);
-    add_child($$, $4);
+    add_child($$, $4); // Function block
+    add_child($$, $5); // Statement block
 }
 ;
 
@@ -195,43 +201,93 @@ function_block : function function_block {
     add_child($$, $1);
     add_child($$, $2);
 }
-| procedure function_block
+| procedure function_block {
+    $$ = create_node("function_block");
+    add_child($$, $1);
+    add_child($$, $2);
+}
 | {
     $$ = create_node("empty");
 }
 ;
 
-procedure : K_PROCEDURE IDENTIFIER LPAREN parameters RPAREN LCURLY statement_block RCURLY
+procedure : K_PROCEDURE IDENTIFIER LPAREN parameters RPAREN LCURLY statement_block RCURLY {
+    $$ = create_node("procedure");
+    Node *id_node = create_node("IDENTIFIER");
+    add_child(id_node, create_node($2));
+    add_symbol($2, "procedure", "N/A");
+    add_child($$, id_node);
+    add_child($$, $4); // Parameters
+    add_child($$, $7); // Statement block
+}
 ;
 
 function : K_FUNCTION type IDENTIFIER LPAREN parameters RPAREN LCURLY statement_block return_statement RCURLY {
     $$ = create_node("function");
-    Node *return_type = create_node("K_INTEGER");
-    add_child(return_type, create_node("integer"));
-    add_child($$, return_type);
+    add_child($$, $2); // Type
     Node *id_node = create_node("IDENTIFIER");
     add_child(id_node, create_node($3));
-    add_symbol($3, "integer function", "N/A");
+    add_symbol($3, $2->type, "function");
     add_child($$, id_node);
-    add_child($$, $8);
+    add_child($$, $8); // Statement block
+    add_child($$, $9); // Return statement
 }
 ;
 
-parameters : parameter_list
-| 
+parameters : parameter_list {
+    $$ = create_node("parameters");
+    add_child($$, $1);
+}
+| {
+    $$ = create_node("empty");
+}
 ;
 
-parameter_list : parameter COMMA parameter_list
-| parameter
+parameter_list : parameter COMMA parameter_list {
+    $$ = create_node("parameter_list");
+    add_child($$, $1);
+    add_child($$, $3);
+}
+| parameter {
+    $$ = create_node("parameter_list");
+    add_child($$, $1);
+}
 ;
 
-parameter : type IDENTIFIER
-| type IDENTIFIER LBRACKET RBRACKET 
+parameter : type IDENTIFIER {
+    $$ = create_node("parameter");
+    Node *type_node = create_node("type");
+    add_child(type_node, create_node($1->type));
+    add_child($$, type_node);
+    Node *id_node = create_node("IDENTIFIER");
+    add_child(id_node, create_node($2));  // $2 is the identifier
+    add_symbol($2, $1->type, "N/A");
+    add_child($$, id_node);
+}
+| type IDENTIFIER LBRACKET RBRACKET {
+    $$ = create_node("parameter_array");
+    Node *type_node = create_node("type");
+    add_child(type_node, create_node($1->type));
+    add_child($$, type_node);
+    Node *id_node = create_node("IDENTIFIER");
+    add_child(id_node, create_node($2));  // $2 is the identifier
+    add_symbol($2, $1->type, "array");
+    add_child($$, id_node);
+}
 ;
 
-type : K_DOUBLE 
-| K_STRING
-| K_INTEGER
+type : K_INTEGER {
+    $$ = create_node("K_INTEGER");
+    add_child($$, create_node("integer"));
+}
+| K_DOUBLE {
+    $$ = create_node("K_DOUBLE");
+    add_child($$, create_node("double"));
+}
+| K_STRING {
+    $$ = create_node("K_STRING");
+    add_child($$, create_node("string"));
+}
 ;
 
 statement_block : statement statement_block {
@@ -239,91 +295,55 @@ statement_block : statement statement_block {
     add_child($$, $1);
     add_child($$, $2);
 }
-| procedure statement_block
 | {
     $$ = create_node("empty");
 }
 ;
 
-statement : declare_statement  {
+statement : declare_statement {
     $$ = $1;
 }
-| assign_statement  {
+| assign_statement {
     $$ = $1;
 }
-| print_statement  {
+| print_statement {
     $$ = $1;
-} 
-| input_statement
-| loop_statement
-| conditional_statement
-| procedure_call
-| expression SEMI
+}
+| input_statement {
+    $$ = $1;
+}
+| loop_statement {
+    $$ = $1;
+}
+| conditional_statement {
+    $$ = $1;
+}
+| procedure_call {
+    $$ = $1;
+}
+| expression SEMI {
+    $$ = $1;
+}
 ;
 
-declare_statement : type IDENTIFIER ASSIGN expression SEMI
-| type declare_list SEMI
-| type IDENTIFIER SEMI {
+declare_statement : type IDENTIFIER SEMI {
     $$ = create_node("declare");
-    Node *type_node = create_node("K_INTEGER");
-    add_child(type_node, create_node("integer"));
-    add_child($$, type_node);
+    add_child($$, $1); // Type
     Node *id_node = create_node("IDENTIFIER");
     add_child(id_node, create_node($2));
-    add_symbol($2, "integer", "N/A");
+    add_symbol($2, $1->type, "variable");
     add_child($$, id_node);
 }
 ;
 
-declare_list : IDENTIFIER COMMA declare_list
-| IDENTIFIER LBRACKET expression RBRACKET COMMA declare_list
-| IDENTIFIER ASSIGN constant COMMA declare_list
-| IDENTIFIER LBRACKET expression RBRACKET
-| IDENTIFIER ASSIGN constant
-| IDENTIFIER
-
-assign_statement : IDENTIFIER ASSIGN ICONSTANT SEMI{
+assign_statement : IDENTIFIER ASSIGN expression SEMI {
     $$ = create_node("assign");
     Node *lhs_node = create_node("IDENTIFIER");
     add_child(lhs_node, create_node($1));
     add_child($$, lhs_node);
-    Node *val_node = create_node("ICONSTANT");
-    char buffer[20];
-    sprintf(buffer, "%d", $3);
-    add_child(val_node, create_node(buffer));
-
-    update_symbol_value($1, buffer);
-
-    add_child($$, val_node);
+    add_child($$, $3); // Expression
+    update_symbol_value($1, $3->type);
 }
-| IDENTIFIER ASSIGN DCONSTANT SEMI{
-    $$ = create_node("assign");
-    Node *lhs_node = create_node("IDENTIFIER");
-    add_child(lhs_node, create_node($1));
-    add_child($$, lhs_node);
-    Node *val_node = create_node("DCONSTANT");
-    char buffer[20];
-    sprintf(buffer, "%f", $3);
-    add_child(val_node, create_node(buffer));
-
-    update_symbol_value($1, buffer);
-
-    add_child($$, val_node);
-}
-| IDENTIFIER ASSIGN IDENTIFIER SEMI{
-    $$ = create_node("assign");
-    Node *lhs_node = create_node("IDENTIFIER");
-    add_child(lhs_node, create_node($1));
-    add_child($$, lhs_node);
-    Node *rhs_node = create_node("IDENTIFIER");
-    add_child(rhs_node, create_node($3));
-    add_child($$, rhs_node);
-}
-| IDENTIFIER ASSIGN expression SEMI
-| IDENTIFIER ASSIGN procedure_call SEMI
-| IDENTIFIER ASSIGN_PLUS expression SEMI
-| IDENTIFIER LBRACKET expression RBRACKET ASSIGN assign_statement
-| IDENTIFIER LBRACKET expression RBRACKET ASSIGN expression SEMI
 ;
 
 print_statement : K_PRINT_INTEGER LPAREN IDENTIFIER RPAREN SEMI {
@@ -332,112 +352,106 @@ print_statement : K_PRINT_INTEGER LPAREN IDENTIFIER RPAREN SEMI {
     add_child(id_node, create_node($3));
     add_child($$, id_node);
 }
-| K_PRINT_STRING LPAREN SCONSTANT RPAREN SEMI {
-    $$ = create_node("print_string");
-    Node *str_node = create_node("SCONSTANT");
-    add_child(str_node, create_node($3));
-    add_symbol($3, "SCONSTANT", $3);
-    add_child($$, str_node);
+;
+
+input_statement : K_READ_INTEGER LPAREN IDENTIFIER RPAREN SEMI {
+    $$ = create_node("read_integer");
+    Node *id_node = create_node("IDENTIFIER");
+    add_child(id_node, create_node($3));
+    add_child($$, id_node);
 }
-| K_PRINT_DOUBLE LPAREN expression RPAREN SEMI
 ;
 
-input_statement : K_READ_INTEGER LPAREN IDENTIFIER RPAREN SEMI
-| K_READ_DOUBLE LPAREN IDENTIFIER RPAREN SEMI
-| K_READ_STRING LPAREN IDENTIFIER RPAREN SEMI
+loop_statement : K_DO while LCURLY statement_block RCURLY {
+    $$ = create_node("do_while");
+    add_child($$, $2); // While condition
+    add_child($$, $4); // Statement block
+}
 ;
 
-loop_statement : K_DO while statement_block
-| K_DO while LCURLY statement_block RCURLY
-| K_DO until LCURLY statement_block RCURLY
-| K_DO do_condition LCURLY statement_block RCURLY
-| K_DO do_condition statement_block 
+while : K_WHILE condition {
+    $$ = create_node("while");
+    add_child($$, $2); // Condition
+}
 ;
 
-while : K_WHILE LPAREN expression RPAREN
+conditional_statement : K_IF condition K_THEN LCURLY statement_block RCURLY else {
+    $$ = create_node("if");
+    add_child($$, $2); // Condition
+    add_child($$, $5); // Statement block
+    add_child($$, $7); // Else block
+}
 ;
 
-until : K_UNTIL LPAREN expression RPAREN
+else : K_ELSE LCURLY statement_block RCURLY {
+    $$ = create_node("else");
+    add_child($$, $3); // Statement block
+}
 ;
 
-do_condition : LPAREN assign_statement expression SEMI expression RPAREN
+condition : LPAREN expression RPAREN {
+    $$ = $2;
+}
 ;
 
-conditional_statement:K_IF condition K_THEN LCURLY statement_block return_statement RCURLY else
-| K_IF condition K_THEN statement_block return_statement else
+return_statement : K_RETURN expression SEMI {
+    $$ = create_node("return");
+    add_child($$, $2); // Expression to return
+}
 ;
 
-else : K_ELSE conditional_statement
-| K_ELSE LCURLY statement_block return_statement RCURLY
-| K_ELSE statement_block return_statement
-|
+expression : simple_expression {
+    $$ = $1;
+}
 ;
 
-condition : LPAREN expression RPAREN
+simple_expression : term {
+    $$ = $1;
+}
 ;
 
-procedure_call : IDENTIFIER LPAREN arguments RPAREN 
+term : ICONSTANT {
+    $$ = create_node("ICONSTANT");
+    char buffer[20];
+    sprintf(buffer, "%d", $1);
+    add_child($$, create_node(buffer));
+}
+| DCONSTANT {
+    $$ = create_node("DCONSTANT");
+    char buffer[20];
+    sprintf(buffer, "%f", $1);
+    add_child($$, create_node(buffer));
+}
+| IDENTIFIER {
+    $$ = create_node("IDENTIFIER");
+    add_child($$, create_node($1));
+}
 ;
 
-arguments : argument_list 
-|
+procedure_call : IDENTIFIER LPAREN argument_list RPAREN SEMI {
+    $$ = create_node("procedure_call");
+    Node *id_node = create_node("IDENTIFIER");
+    add_child(id_node, create_node($1));
+    add_child($$, id_node);
+    add_child($$, $3); // Argument list
+}
 ;
 
-argument_list : IDENTIFIER COMMA argument_list
-| constant COMMA argument_list
-| IDENTIFIER
-| constant
+argument_list : expression COMMA argument_list {
+    $$ = create_node("argument_list");
+    add_child($$, $1);
+    add_child($$, $3);
+}
+| expression {
+    $$ = create_node("argument_list");
+    add_child($$, $1);
+}
+| {
+    $$ = create_node("empty");
+}
 ;
-
-constant : ICONSTANT
-| DCONSTANT
-| SCONSTANT
-;
-
-return_statement : K_RETURN expression SEMI
-| K_RETURN procedure_call SEMI
-| K_RETURN assign_statement 
-|
-;
-
-expression : simple_expression
-| logical_expression
-| procedure_call
-| expression DAND logical_expression
-| expression DOR logical_expression
-;
-
-simple_expression : term
-| simple_expression PLUS term
-| simple_expression MINUS term
-| MINUS expression
-| factor INCREMENT
-| factor DECREMENT
-;
-
-logical_expression : expression GEQ expression
-| expression LEQ expression
-| expression GT expression
-| expression LT expression
-| expression DEQ expression
-| expression NE expression
-;
-
-term : factor
-| term MULTIPLY factor
-| term DIVIDE factor
-| term MOD factor
-;
-
-factor : IDENTIFIER
-| IDENTIFIER LBRACKET expression RBRACKET
-| ICONSTANT
-| DCONSTANT
-| SCONSTANT
-| LPAREN expression RPAREN
-;
-
 %% 
+
 
 void gen(Node *node, int level, FILE *file) {
     if (node == NULL) return;
