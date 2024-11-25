@@ -362,17 +362,24 @@ input_statement : K_READ_INTEGER LPAREN IDENTIFIER RPAREN SEMI {
 }
 ;
 
-loop_statement : K_DO while LCURLY statement_block RCURLY {
-    $$ = create_node("do_while");
-    add_child($$, $2); // While condition
-    add_child($$, $4); // Statement block
-}
+loop_statement 
+    : K_DO while statement {
+        $$ = create_node("do_while");
+        add_child($$, $2); // While condition
+        add_child($$, $3); // Single statement or statement block
+    }
+    | K_DO while LCURLY statement_block RCURLY {
+        $$ = create_node("do_while");
+        add_child($$, $2); // While condition
+        add_child($$, $4); // Statement block
+    }
 ;
 
-while : K_WHILE condition {
-    $$ = create_node("while");
-    add_child($$, $2); // Condition
-}
+while
+    : K_WHILE LPAREN expression RPAREN {
+        $$ = create_node("while_condition");
+        add_child($$, $3); // Expression inside the parentheses
+    }
 ;
 
 conditional_statement : K_IF condition K_THEN LCURLY statement_block RCURLY else {
