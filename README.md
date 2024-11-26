@@ -64,6 +64,16 @@ gcc f24.c -o f24 -lm
 
 ./f24
 
+## Complete Parser
+
+Taylor worked on the rules and symbol table while Greg worked on the parse tree
+
+<strong>compile directions below:</strong>
+
+make
+
+./parser < filename
+
 
 
 
