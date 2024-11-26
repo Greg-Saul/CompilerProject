@@ -5,6 +5,7 @@
 
 #define MAX_SYMBOLS 50
 
+
 typedef struct Symbol {
     char *key;
     char *type;
