@@ -5,7 +5,6 @@
 
 #define MAX_SYMBOLS 50
 
-
 typedef struct Symbol {
     char *key;
     char *type;
@@ -124,7 +123,7 @@ Node* create_node(const char *type) {
     node->type = strdup(type);
     node->children = NULL;
     node->child_count = 0;
-    // printf("Node ID: %d\n", node->node_id);
+    printf("Node ID: %d\n", node->node_id);
     return node;
 }
 
@@ -196,6 +195,7 @@ program : K_PROGRAM IDENTIFIER LCURLY function_block statement_block RCURLY {
     add_child($$, $4);
 }
 ;
+
 
 function_block : function function_block {
     $$ = create_node("function_block");
@@ -617,9 +617,12 @@ argument_list : IDENTIFIER COMMA argument_list {
 | constant COMMA argument_list {
     $$ = create_node("argument_list_constant");
     Node *const_node = create_node("constant");
-    add_child(const_node, create_node($1));
+    char buffer[20];
+    sprintf(buffer, "%p", $1);
+    add_child(const_node, create_node(buffer));
+    // add_child(const_node, create_node($1));
     add_child($$, const_node);
-    add_child($$, $3);
+    add_child($$, $3); 
 }
 | IDENTIFIER {
     $$ = create_node("single_argument");
@@ -630,7 +633,10 @@ argument_list : IDENTIFIER COMMA argument_list {
 | constant {
     $$ = create_node("single_argument_constant");
     Node *const_node = create_node("constant");
-    add_child(const_node, create_node($1));
+    char buffer[20];
+    sprintf(buffer, "%p", $1);
+    add_child(const_node, create_node(buffer));
+    // add_child(const_node, create_node($1));
     add_child($$, const_node);
 }
 ;
