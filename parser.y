@@ -116,14 +116,14 @@ void yyerror(const char *s);
 int yylex(void);
 
 int current_node_id = 1;
-
 Node* create_node(const char *type) {
     Node *node = (Node*)malloc(sizeof(Node));
     node->node_id = current_node_id++;
     node->type = strdup(type);
     node->children = NULL;
     node->child_count = 0;
-    printf("Node ID: %d\n", node->node_id);
+    printf("Node: %s  ", node->type);
+    // printf(" %d ", current_node_id);
     return node;
 }
 
@@ -142,7 +142,6 @@ void print_tree(Node *node, int level) {
         print_tree(node->children[i], level + 1);
     }
 }
-
 
 void walk_tree(Node *node) {
     print_tree(node, 0);
@@ -202,9 +201,13 @@ function_block : function function_block {
     add_child($$, $1);
     add_child($$, $2);
 }
-| procedure function_block
+| procedure function_block{
+    $$ = create_node("procedure");
+    add_child($$, $1);
+    add_child($$, $2);
+}
 | {
-    $$ = create_node("empty");
+    $$ = create_node("empty1");
 }
 ;
 
@@ -235,7 +238,7 @@ parameters : parameter_list {
     add_child($$, $1);
 }
 | {
-    $$ = create_node("empty");
+    $$ = create_node("empty2");
 }
 ;
 
@@ -291,7 +294,7 @@ statement_block : statement statement_block {
     add_child($$, $2);
 }
 | {
-    $$ = create_node("empty");
+    $$ = create_node("empty3");
 }
 ;
 
@@ -562,11 +565,7 @@ conditional_statement : K_IF condition K_THEN LCURLY statement_block return_stat
 }
 ;
 
-else : K_ELSE conditional_statement {
-    $$ = create_node("else_conditional");
-    add_child($$, $2);
-}
-| K_ELSE LCURLY statement_block return_statement RCURLY {
+else : K_ELSE LCURLY statement_block return_statement RCURLY {
     $$ = create_node("else_statement_block");
     add_child($$, $3);
     add_child($$, $4);
