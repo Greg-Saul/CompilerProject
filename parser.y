@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_SYMBOLS 50
+#define MAX_SYMBOLS 800
 
 typedef struct Symbol {
     char *key;
@@ -122,7 +122,7 @@ Node* create_node(const char *type) {
     node->type = strdup(type);
     node->children = NULL;
     node->child_count = 0;
-    printf("Node: %s  ", node->type);
+    // printf("Node: %s  ", node->type);
     // printf(" %d ", current_node_id);
     return node;
 }
@@ -455,16 +455,16 @@ assign_statement
 ;
 
 
-print_statement : K_PRINT_INTEGER LPAREN IDENTIFIER RPAREN SEMI {
+print_statement : K_PRINT_INTEGER LPAREN expression RPAREN SEMI {
     $$ = create_node("print_integer");
     Node *id_node = create_node("IDENTIFIER");
-    add_child(id_node, create_node($3));
+    add_child(id_node, $3);  
     add_child($$, id_node);
 }
-| K_PRINT_STRING LPAREN SCONSTANT RPAREN SEMI {
+| K_PRINT_STRING LPAREN expression RPAREN SEMI {
     $$ = create_node("print_string");
     Node *str_node = create_node("SCONSTANT");
-    add_child(str_node, create_node($3));
+    add_child(str_node, $3);
     add_child($$, str_node);
 }
 | K_PRINT_DOUBLE LPAREN expression RPAREN SEMI {
@@ -820,50 +820,30 @@ factor : IDENTIFIER {
 
 %% 
 
-void gen(Node *node, int level, FILE *file) {
+void gen_tree(Node *node, int level, FILE *file) {
     if (node == NULL) return;
-
-    if (strcmp(node->type, "declare") == 0) {
-        fprintf(file, "\tSR -= 1;\n");
-    }
-    else if (strcmp(node->type, "assign") == 0) {
-        Node *lhs_node = node->children[0];
-        Node *rhs_node = node->children[1];
-
-        if (strcmp(rhs_node->type, "ICONSTANT") == 0) {
-            fprintf(file, "\tR[1] = %s;\n", rhs_node->children[0]->type); 
-            fprintf(file, "\tF24_Time += 1;\n");
-
-            fprintf(file, "\tMem[SR] = R[1];\n");
-            fprintf(file, "\tF24_Time += (20+1);\n");
+    //ALL OF MY IF STATEMENTS
+    if (strcmp(node->type, "program") == 0){
+        fprintf(file, "int main() {");
+        for (int i = 0; i < node->child_count; i++) {
+            // NEED RECURSIVE CALL HERE
+            gen_tree(node->children[i], level + 1, file);
         }
-        else if (strcmp(rhs_node->type, "IDENTIFIER") == 0) {
-            fprintf(file, "\tR[1] = Mem[SR];\n");
-            fprintf(file, "\tF24_Time += (20+1);\n");
-
-            fprintf(file, "\tMem[SR] = R[1];\n");
-            fprintf(file, "\tF24_Time += (20+1);\n");
+        fprintf(file, "}");
+    }
+    else if (strcmp(node->type, "procedure") == 0){
+        fprintf(file, "procedure ");
+        for (int i = 0; i < node->child_count; i++) {
+            // NEED RECURSIVE CALL HERE
+            gen_tree(node->children[i], level + 1, file);
         }
+        fprintf(file, "}");
     }
-    else if (strcmp(node->type, "print_integer") == 0) {
-        fprintf(file, "\tprint_int(Mem[SR]);\n");
-        fprintf(file, "\tF24_Time += (100+20);\n");
-    }
-    else if (strcmp(node->type, "print_string") == 0) {
-        Node *string_node = node->children[0];
-        fprintf(file, "\tstrcpy(SMem, %s);\n", string_node->children[0]->type);
-        fprintf(file, "\tF24_Time += (20+1);\n");
-        fprintf(file, "\tprint_string(SMem);\n");
-        fprintf(file, "\tF24_Time += (100+20);\n");
-    }
-
-    for (int i = 0; i < node->child_count; i++) {
-        gen(node->children[i], level + 1, file);
-    }
+    
 }
 
-void generate_code(Node *node, FILE *file) {
-    gen(node, 0, file);
+void gen_walk(Node *node, FILE *file) {
+    gen_tree(node, 0, file);
 }
 
 int main(void) {
@@ -880,11 +860,16 @@ int main(void) {
 	}
 
     FILE *file = fopen("yourmain.h", "w");
-    fprintf(file, "int yourmain()\n{\n");
-    generate_code(parse_tree, file);
-    fprintf(file, "\treturn 0;");
-    fprintf(file, "\n}");
+    /* fprintf(file, "int yourmain()\n{\n"); */
+    /* generate_code(parse_tree, file); */
+    /* fprintf(file, "\treturn 0;");
+    fprintf(file, "\n}"); */
+    gen_walk(parse_tree, file);
     fclose(file);
+    
+
+
+
 
     printf("\n\n++++++++++++++++++++++++++++++++++++++++++++++++\n");
     printf("+             Symbol Table Elements            +\n");
