@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_SYMBOLS 800
+#define MAX_SYMBOLS 7919
 
 typedef struct Symbol {
     char *key;
@@ -105,6 +105,21 @@ void free_symbol_table() {
     }
 }
 
+Symbol* find_symbol(const char *key) {
+    unsigned int index = hash(key);
+    Symbol *current = symbol_table.table[index];
+
+    while (current != NULL) {
+        if (strcmp(current->key, key) == 0) {
+            return current;
+        }
+        current = current->next;
+    }
+
+    return NULL;
+}
+
+
 typedef struct Node {
     int node_id;
     char *type;
@@ -122,8 +137,6 @@ Node* create_node(const char *type) {
     node->type = strdup(type);
     node->children = NULL;
     node->child_count = 0;
-    // printf("Node: %s  ", node->type);
-    // printf(" %d ", current_node_id);
     return node;
 }
 
@@ -134,11 +147,13 @@ void add_child(Node *parent, Node *child) {
 
 void print_tree(Node *node, int level) {
     if (node == NULL) return;
-    for (int i = 0; i < level; i++) {
-        printf("  ");
-    }
+    // for (int i = 0; i < level; i++) {
+    //     printf("%d", level);
+    // }
+    printf("child count: %d, level: %d  ", node->child_count, level);
     printf("** Node %d: %s\n", node->node_id, node->type);
     for (int i = 0; i < node->child_count; i++) {
+        // printf("%d", i);
         print_tree(node->children[i], level + 1);
     }
 }
@@ -192,6 +207,7 @@ program : K_PROGRAM IDENTIFIER LCURLY function_block statement_block RCURLY {
     add_child(id_node, create_node($2));
     add_child($$, id_node);
     add_child($$, $4);
+    add_symbol($2, "program", "");
 }
 ;
 
@@ -207,7 +223,7 @@ function_block : function function_block {
     add_child($$, $2);
 }
 | {
-    $$ = create_node("empty1");
+    $$ = create_node("empty");
 }
 ;
 
@@ -218,6 +234,7 @@ procedure : K_PROCEDURE IDENTIFIER LPAREN parameters RPAREN LCURLY statement_blo
     add_child($$, id_node);
     add_child($$, $4);
     add_child($$, $7);
+    add_symbol($2, "procedure", "void");
 }
 ;
 
@@ -230,6 +247,7 @@ function : K_FUNCTION type IDENTIFIER LPAREN parameters RPAREN LCURLY statement_
     add_child(id_node, create_node($3));
     add_child($$, id_node);
     add_child($$, $8);
+    add_symbol($3, "function", $2->type);
 }
 ;
 
@@ -238,7 +256,7 @@ parameters : parameter_list {
     add_child($$, $1);
 }
 | {
-    $$ = create_node("empty2");
+    $$ = create_node("empty");
 }
 ;
 
@@ -259,6 +277,7 @@ parameter : type IDENTIFIER {
     Node *id_node = create_node("IDENTIFIER");
     add_child(id_node, create_node($2));
     add_child($$, id_node);
+    add_symbol($2, $1->type, "");
 }
 | type IDENTIFIER LBRACKET RBRACKET {
     $$ = create_node("parameter");
@@ -266,6 +285,7 @@ parameter : type IDENTIFIER {
     Node *id_node = create_node("IDENTIFIER");
     add_child(id_node, create_node($2));
     add_child($$, id_node);
+    add_symbol($2, "array", $1->type);
 }
 ;
 
@@ -294,7 +314,7 @@ statement_block : statement statement_block {
     add_child($$, $2);
 }
 | {
-    $$ = create_node("empty3");
+    $$ = create_node("empty");
 }
 ;
 
@@ -324,16 +344,22 @@ statement : declare_statement {
 }
 ;
 
-declare_statement : type IDENTIFIER ASSIGN expression SEMI
-| type declare_list SEMI
-| type IDENTIFIER SEMI {
-    $$ = create_node("declare");
-    Node *type_node = create_node("K_INTEGER");
-    add_child(type_node, create_node("integer"));
-    add_child($$, type_node);
+declare_statement : type IDENTIFIER ASSIGN expression SEMI {
+    $$ = create_node("declare_assign");
+    add_child($$, $1);
     Node *id_node = create_node("IDENTIFIER");
     add_child(id_node, create_node($2));
     add_child($$, id_node);
+    add_child($$, $4);
+    add_symbol($2, $1->type, "");
+}
+| type IDENTIFIER SEMI {
+    $$ = create_node("declare");
+    add_child($$, $1);
+    Node *id_node = create_node("IDENTIFIER");
+    add_child(id_node, create_node($2));
+    add_child($$, id_node);
+    add_symbol($2, $1->type, "");
 }
 ;
 
@@ -387,13 +413,14 @@ assign_statement
 : IDENTIFIER ASSIGN ICONSTANT SEMI {
     $$ = create_node("assign");
     Node *lhs_node = create_node("IDENTIFIER");
-    lhs_node->type = strdup($1);
+    add_child(lhs_node, create_node($1));
     add_child($$, lhs_node);
     Node *val_node = create_node("ICONSTANT");
     char buffer[20];
     sprintf(buffer, "%d", $3);
-    val_node->type = strdup(buffer);
+    add_child(val_node, create_node(buffer));
     add_child($$, val_node);
+    update_symbol_value($1, buffer);
 }
 | IDENTIFIER ASSIGN DCONSTANT SEMI {
     $$ = create_node("assign");
@@ -454,17 +481,16 @@ assign_statement
 }
 ;
 
-
-print_statement : K_PRINT_INTEGER LPAREN expression RPAREN SEMI {
+print_statement : K_PRINT_INTEGER LPAREN IDENTIFIER RPAREN SEMI {
     $$ = create_node("print_integer");
     Node *id_node = create_node("IDENTIFIER");
-    add_child(id_node, $3);  
+    add_child(id_node, create_node($3));
     add_child($$, id_node);
 }
-| K_PRINT_STRING LPAREN expression RPAREN SEMI {
+| K_PRINT_STRING LPAREN SCONSTANT RPAREN SEMI {
     $$ = create_node("print_string");
     Node *str_node = create_node("SCONSTANT");
-    add_child(str_node, $3);
+    add_child(str_node, create_node($3));
     add_child($$, str_node);
 }
 | K_PRINT_DOUBLE LPAREN expression RPAREN SEMI {
@@ -472,7 +498,6 @@ print_statement : K_PRINT_INTEGER LPAREN expression RPAREN SEMI {
     add_child($$, $3);
 }
 ;
-
 
 input_statement : K_READ_INTEGER LPAREN IDENTIFIER RPAREN SEMI {
     $$ = create_node("input_integer");
@@ -820,30 +845,90 @@ factor : IDENTIFIER {
 
 %% 
 
-void gen_tree(Node *node, int level, FILE *file) {
+void gen(Node *node, int level, FILE *file) {
     if (node == NULL) return;
-    //ALL OF MY IF STATEMENTS
-    if (strcmp(node->type, "program") == 0){
-        fprintf(file, "int main() {");
-        for (int i = 0; i < node->child_count; i++) {
-            // NEED RECURSIVE CALL HERE
-            gen_tree(node->children[i], level + 1, file);
-        }
-        fprintf(file, "}");
-    }
-    else if (strcmp(node->type, "procedure") == 0){
-        fprintf(file, "procedure ");
-        for (int i = 0; i < node->child_count; i++) {
-            // NEED RECURSIVE CALL HERE
-            gen_tree(node->children[i], level + 1, file);
-        }
-        fprintf(file, "}");
-    }
     
+    if (strcmp(node->type, "declare") == 0) {
+        fprintf(file, "\tSR -= 1;\n");
+    }
+    else if (strcmp(node->type, "assign") == 0) {
+        Node *lhs_node = node->children[0];
+        Node *rhs_node = node->children[1];
+        
+        if (strcmp(rhs_node->type, "ICONSTANT") == 0) {
+            fprintf(file, "\tR[1] = %s;\n", rhs_node->children[0]->type); 
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tMem[SR] = R[1];\n");
+            fprintf(file, "\tF24_Time += (20+1);\n");
+        }
+        else if (strcmp(rhs_node->type, "IDENTIFIER") == 0) {
+            fprintf(file, "\tR[1] = Mem[SR];\n");
+            fprintf(file, "\tF24_Time += (20+1);\n");
+            fprintf(file, "\tMem[SR] = R[1];\n");
+            fprintf(file, "\tF24_Time += (20+1);\n");
+        }
+    }
+    else if (strcmp(node->type, "print_integer") == 0) {
+        fprintf(file, "\tprint_int(Mem[SR]);\n");
+        fprintf(file, "\tF24_Time += (100+20);\n");
+    }
+    else if (strcmp(node->type, "print_string") == 0) {
+        Node *string_node = node->children[0];
+        fprintf(file, "\tstrcpy(SMem, %s);\n", string_node->children[0]->type);
+        fprintf(file, "\tF24_Time += (20+1);\n");
+        fprintf(file, "\tprint_string(SMem);\n");
+        fprintf(file, "\tF24_Time += (100+20);\n");
+    }
+    //////////////////////////////////////////////////////////////////////////////////
+    
+    /* R[1] = 1;
+    F24_Time += 1;
+    R[2] = 1;
+    F24_Time += 1;
+    R[1] = R[1] + R[2];
+    F24_Time += (1+1+1); */
+ 
+    else if (strcmp(node->type, "expression_simple") == 0){
+        Node *child = node->children[0];
+        Node *lhs_node = child->children[0]->children[0]->children[0]->children[0];
+        Node *rhs_node = child->children[1]->children[0]->children[0];
+        /* printf("%s", child->children[1]->children[0]->children[0]->type); */
+        
+        if (strcmp(child->type, "simple_expression_plus") == 0){
+            fprintf(file, "\tR[1] = %s;\n", lhs_node->type);
+            fprintf(file, "\tR[2] = %s;\n", rhs_node->type);
+        }
+        else if (strcmp(child->type, "simple_expression_plus") == 0){
+            printf("hello there");
+        }
+        else if (strcmp(child->type, "term_multiply") == 0){
+            printf("hello there");
+        }
+        else if (strcmp(child->type, "term_divide") == 0){
+            printf("hello there");
+        }
+    }
+    ////////////////////////////////////////////////////////////////////////////////
+    if (strcmp(node->type, "logical_expression_lt") == 0){
+
+    }
+    else if (strcmp(node->type, "logical_expression_lt") == 0){
+        
+    }
+    else if (strcmp(node->type, "logical_expression_deq") == 0){
+        
+    }
+    else if (strcmp(node->type, "logical_expression_neq") == 0){
+        
+    }
+//////////////////////////////////////////////////////////////////////////////////////////
+    for (int i = 0; i < node->child_count; i++) {
+        gen(node->children[i], level + 1, file);
+    }
 }
 
-void gen_walk(Node *node, FILE *file) {
-    gen_tree(node, 0, file);
+void generate_code(Node *node, FILE *file) {
+    gen(node, 0, file);
 }
 
 int main(void) {
@@ -860,20 +945,12 @@ int main(void) {
 	}
 
     FILE *file = fopen("yourmain.h", "w");
-    /* fprintf(file, "int yourmain()\n{\n"); */
-    /* generate_code(parse_tree, file); */
-    /* fprintf(file, "\treturn 0;");
-    fprintf(file, "\n}"); */
-    gen_walk(parse_tree, file);
+    fprintf(file, "int yourmain()\n{\n");
+    generate_code(parse_tree, file);
+    fprintf(file, "\treturn 0;");
+    fprintf(file, "\n}");
     fclose(file);
-    
 
-
-
-
-    printf("\n\n++++++++++++++++++++++++++++++++++++++++++++++++\n");
-    printf("+             Symbol Table Elements            +\n");
-    printf("++++++++++++++++++++++++++++++++++++++++++++++++\n");
     print_symbol_table();
     free_symbol_table();
 
