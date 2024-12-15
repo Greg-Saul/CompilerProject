@@ -1,0 +1,15 @@
+program our_example
+{
+    function integer main()
+    {
+        integer a;
+        a := 2;
+        integer b;
+        b := 5 + a;
+        print_integer(b);
+        integer c;
+        c := a * 3;
+        print_string("\n");
+        print_integer(c);
+    }
+}
