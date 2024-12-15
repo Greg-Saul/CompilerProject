@@ -13,6 +13,8 @@ FLEX_SRC = lexer.l
 BISON_C = parser.tab.c
 BISON_H = parser.tab.h
 FLEX_C = lex.yy.c
+YOURMAIN = yourmain.h
+EXE = f24
 
 # Output executable
 TARGET = parser
@@ -34,4 +36,4 @@ $(TARGET): $(BISON_C) $(FLEX_C)
 
 # Clean up
 clean:
-	rm -f $(TARGET) $(BISON_C) $(BISON_H) $(FLEX_C)
+	rm -f $(TARGET) $(BISON_C) $(BISON_H) $(FLEX_C) $(EXE) $(YOURMAIN)
