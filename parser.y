@@ -892,23 +892,48 @@ void gen(Node *node, int level, FILE *file) {
  
     else if (strcmp(node->type, "expression_simple") == 0){
         Node *child = node->children[0];
-        /* Node *lhs_node = child->children[0]->children[0]->children[0]->children[0]; */ 
-        /* Node *rhs_node = child->children[1]->children[0]->children[0];
-        printf("%s", child->children[1]->children[0]->children[0]->type); */
+        Node *lhs_node = child->children[0]->children[0]->children[0]->children[0]; 
+        Node *rhs_node = child->children[1]->children[0]->children[0];
+        /* printf("%s", child->children[1]->children[0]->children[0]->type); */
         
         if (strcmp(child->type, "simple_expression_plus") == 0){
-            /* fprintf(file, "\tR[1] = %s;\n", lhs_node->type); */
-            
-            /* fprintf(file, "\tR[2] = %s;\n", find_symbol(rhs_node->type)->value); */
+            fprintf(file, "\tR[1] = %s;\n", lhs_node->type);
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tR[2] = %s;\n", find_symbol(rhs_node->type)->value);
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tR[1] = R[1] + R[2];\n");
+            fprintf(file, "\tF24_Time += (1+1+1);\n");
+            fprintf(file, "\tMem[SR] = R[1];\n");
+            fprintf(file, "\tF24_Time += (20+1);\n");
+ 
         }
-        else if (strcmp(child->type, "simple_expression_plus") == 0){
-            printf("hello there");
+        else if (strcmp(child->type, "simple_expression_minus") == 0){
+            fprintf(file, "\tR[1] = %s;\n", find_symbol(lhs_node->type)->value);
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tR[2] = %s;\n", rhs_node->type);
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tR[1] = R[1] - R[2];\n");
+            fprintf(file, "\tF24_Time += (1+1+1);\n");
+            fprintf(file, "\tMem[SR] = R[1];\n");
+            fprintf(file, "\tF24_Time += (20+1);\n");
         }
-        else if (strcmp(child->type, "term_multiply") == 0){
-            printf("hello there");
+        else if (strcmp(child->type, "simple_expression_negate") == 0){
+            fprintf(file, "\tR[1] = %s;\n", child->children[0]->type);
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tR[1] = -R[1];\n");
+            fprintf(file, "\tF24_Time += (1+1+1);\n");
         }
-        else if (strcmp(child->type, "term_divide") == 0){
-            printf("hello there");
+        else if (strcmp(child->type, "simple_expression") == 0){
+            Node* term = child->children[0];
+            fprintf(file, "It's a term");
+            if(strcmp(term->type, "term_multiply") == 0) {
+            }
+            else if(strcmp(term->type, "term_divide") == 0) {
+                fprintf(file, "Divide");
+            }
+            else if(strcmp(term->type, "term_mod") == 0) {
+                fprintf(file, "Mod");
+            }
         }
     }
     ////////////////////////////////////////////////////////////////////////////////
