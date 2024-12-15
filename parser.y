@@ -956,18 +956,55 @@ void gen(Node *node, int level, FILE *file) {
         }
     }
     ////////////////////////////////////////////////////////////////////////////////
-    if (strcmp(node->type, "expression_logical") == 0){
-        
-    }
     else if (strcmp(node->type, "logical_expression_lt") == 0){
-        
+        // R[2] = lhs_node
+        // F24_Time += 1;
+        // R[3] = rhs_node
+        // F24_Time += 1;
+        // R[1] = R[2] < R[3]
+        // F24_Time += (1+1+1);
+    }
+    else if (strcmp(node->type, "logical_expression_gt") == 0){
+        // R[2] = lhs_node
+        // F24_Time += 1;
+        // R[3] = rhs_node
+        // F24_Time += 1;
+        // R[1] = R[2] > R[3]
+        // F24_Time += (1+1+1);
+    }
+    else if (strcmp(node->type, "logical_expression_geq") == 0){
+        // R[2] = lhs_node
+        // F24_Time += 1;
+        // R[3] = rhs_node
+        // F24_Time += 1;
+        // R[1] = R[2] >= R[3]
+        // F24_Time += (1+1+1);
+    }
+    else if (strcmp(node->type, "logical_expression_leq") == 0){
+        // R[2] = lhs_node
+        // F24_Time += 1;
+        // R[3] = rhs_node
+        // F24_Time += 1;
+        // R[1] = R[2] <= R[3]
+        // F24_Time += (1+1+1);
     }
     else if (strcmp(node->type, "logical_expression_deq") == 0){
-        
+        // R[2] = lhs_node
+        // F24_Time += 1;
+        // R[3] = rhs_node
+        // F24_Time += 1;
+        // R[1] = R[2] == R[3]
+        // F24_Time += (1+1+1);
     }
     else if (strcmp(node->type, "logical_expression_neq") == 0){
-        
+        // R[2] = lhs_node
+        // F24_Time += 1;
+        // R[3] = rhs_node
+        // F24_Time += 1;
+        // R[1] = R[2] != R[3]
+        // F24_Time += (1+1+1);
     }
+
 //////////////////////////////////////////////////////////////////////////////////////////
     for (int i = 0; i < node->child_count; i++) {
         gen(node->children[i], level + 1, file);
