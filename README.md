@@ -76,7 +76,8 @@ make
 
 ## *Complete code generator
 
-For this assignment, Taylor and Greg split tasks evenly while Cody is still MIA. Greg worked on making the tree usable and Taylor worked on making the symbol table usable. After seemingly endless hours over the last few weeks, we have equally shared code generation responsibilites. Taylor spent the time optimizing our symbol table and figuring out what generated code should look like for many different cases. Greg spent the time figuring out effective waays to read the data structures for the code generation functions.
+For this assignment, Taylor and Greg split tasks evenly while Cody is still MIA. Greg worked on making the tree usable and Taylor worked on making the symbol table usable. After seemingly endless hours over the last few weeks, we have equally shared code generation responsibilites. Taylor spent the time reworking our symbol table and figuring out what generated code should look like for many different cases. Greg spent the time figuring out effective waays to read the data structures for the code generation functions.
+We simply ran out of time to do much more than we provide in this submission. Between finals and other final projects, time was limited for everything and a lack of constructive feedback on our compiler made it extremely difficult to track down where we had made mistakes that were impacting our attempts to complete the code generation.  We figured out many of our problems likely came from the inital construction of our symbol table and an overcomplication of our tree structure. Had these things been brought to our attention earlier in the semester, we could've made the necessary adjustments much sooner and likely had a better final project.
 
 <strong>compile directions below:</strong>
 
