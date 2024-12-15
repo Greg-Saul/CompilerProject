@@ -74,7 +74,9 @@ make
 
 ./parser < filename
 
+## What works/doesn't work
 
+Our lexer, parser, ast, and symbol table all work. We have some code generation for printing and <strong> very simple </strong> arithmetic. We were unable to effectively read our tree and symbol table to generate more complicated code on the f24 vm.
 
 
 
