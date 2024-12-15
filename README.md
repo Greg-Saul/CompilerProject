@@ -74,6 +74,10 @@ make
 
 ./parser < filename
 
+## *Complete code generator
+
+For this assignment, Taylor and Greg split tasks evenly while Cody is still MIA. Greg worked on making the tree usable and Taylor worked on making the symbol table usable. After seemingly endless hours over the last few weeks, we have equally shared code generation responsibilites. Taylor spent the time optimizing our symbol table and figuring out what generated code should look like for many different cases. Greg spent the time figuring out effective waays to read the data structures for the code generation functions.
+
 ## What works/doesn't work
 
 Our lexer, parser, ast, and symbol table all work. We have some code generation for printing and <strong> very simple </strong> arithmetic. We were unable to effectively read our tree and symbol table to generate more complicated code on the f24 vm.
