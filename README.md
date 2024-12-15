@@ -80,6 +80,9 @@ For this assignment, Taylor and Greg split tasks evenly while Cody is still MIA.
 
 We simply ran out of time to do much more than we provide in this submission. Between finals and other final projects, time was limited for everything and a lack of constructive feedback on our compiler made it extremely difficult to track down where we had made mistakes that were impacting our attempts to complete the code generation.  We figured out many of our problems likely came from the inital construction of our symbol table and an overcomplication of our tree structure. Had these things been brought to our attention earlier in the semester, we could've made the necessary adjustments much sooner and likely had a better final project.
 
+On the mg.f24 file, our code generation does not work. This is due to the complicated nature of our tree and the shear number of different commands we would have the generate code for. We have included a file called <strong>our_example.f24</strong> that when compiled can show how our addition and multiplication works, along with printing strings and integers. This generated code runs and produces output on the f24 virtual machine.
+
+
 <strong>compile directions below:</strong>
 
 make
