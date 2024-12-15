@@ -353,6 +353,7 @@ declare_statement : type IDENTIFIER ASSIGN expression SEMI {
     add_child($$, $4);
     add_symbol($2, $1->type, "");
 }
+| type declare_list SEMI
 | type IDENTIFIER SEMI {
     $$ = create_node("declare");
     add_child($$, $1);
@@ -432,6 +433,7 @@ assign_statement
     sprintf(buffer, "%f", $3);
     val_node->type = strdup(buffer);
     add_child($$, val_node);
+    update_symbol_value($1, buffer);
 }
 | IDENTIFIER ASSIGN IDENTIFIER SEMI {
     $$ = create_node("assign");
@@ -890,13 +892,14 @@ void gen(Node *node, int level, FILE *file) {
  
     else if (strcmp(node->type, "expression_simple") == 0){
         Node *child = node->children[0];
-        Node *lhs_node = child->children[0]->children[0]->children[0]->children[0];
-        Node *rhs_node = child->children[1]->children[0]->children[0];
-        /* printf("%s", child->children[1]->children[0]->children[0]->type); */
+        /* Node *lhs_node = child->children[0]->children[0]->children[0]->children[0]; */ 
+        /* Node *rhs_node = child->children[1]->children[0]->children[0];
+        printf("%s", child->children[1]->children[0]->children[0]->type); */
         
         if (strcmp(child->type, "simple_expression_plus") == 0){
-            fprintf(file, "\tR[1] = %s;\n", lhs_node->type);
-            fprintf(file, "\tR[2] = %s;\n", rhs_node->type);
+            /* fprintf(file, "\tR[1] = %s;\n", lhs_node->type); */
+            
+            /* fprintf(file, "\tR[2] = %s;\n", find_symbol(rhs_node->type)->value); */
         }
         else if (strcmp(child->type, "simple_expression_plus") == 0){
             printf("hello there");
@@ -951,6 +954,7 @@ int main(void) {
     fprintf(file, "\n}");
     fclose(file);
 
+    printf("\n");
     print_symbol_table();
     free_symbol_table();
 
