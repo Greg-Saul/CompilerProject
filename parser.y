@@ -733,9 +733,25 @@ expression : simple_expression {
 }
 ;
 
+term : factor {
+    $$ = create_node("term");
+    add_child($$, $1);
+}
+;
+
 simple_expression : term {
     $$ = create_node("simple_expression");
     add_child($$, $1);
+}
+| simple_expression MOD term {
+    $$ = create_node("simple_expression_mod");
+    add_child($$, $1);
+    add_child($$, $3);
+}
+| simple_expression DIVIDE term {
+    $$ = create_node("simple_expression_divide");
+    add_child($$, $1);
+    add_child($$, $3);
 }
 | simple_expression PLUS term {
     $$ = create_node("simple_expression_plus");
@@ -744,6 +760,11 @@ simple_expression : term {
 }
 | simple_expression MINUS term {
     $$ = create_node("simple_expression_minus");
+    add_child($$, $1);
+    add_child($$, $3);
+}
+| simple_expression MULTIPLY term {
+    $$ = create_node("simple_expression_times");
     add_child($$, $1);
     add_child($$, $3);
 }
@@ -793,26 +814,6 @@ logical_expression : expression GEQ expression {
 }
 ;
 
-term : factor {
-    $$ = create_node("term");
-    add_child($$, $1);
-}
-| term MULTIPLY factor {
-    $$ = create_node("term_multiply");
-    add_child($$, $1);
-    add_child($$, $3);
-}
-| term DIVIDE factor {
-    $$ = create_node("term_divide");
-    add_child($$, $1);
-    add_child($$, $3);
-}
-| term MOD factor {
-    $$ = create_node("term_mod");
-    add_child($$, $1);
-    add_child($$, $3);
-}
-;
 
 factor : IDENTIFIER {
     $$ = create_node("factor_identifier");
@@ -923,22 +924,40 @@ void gen(Node *node, int level, FILE *file) {
             fprintf(file, "\tR[1] = -R[1];\n");
             fprintf(file, "\tF24_Time += (1+1+1);\n");
         }
-        else if (strcmp(child->type, "simple_expression") == 0){
-            Node* term = child->children[0];
-            fprintf(file, "It's a term");
-            if(strcmp(term->type, "term_multiply") == 0) {
-            }
-            else if(strcmp(term->type, "term_divide") == 0) {
-                fprintf(file, "Divide");
-            }
-            else if(strcmp(term->type, "term_mod") == 0) {
-                fprintf(file, "Mod");
-            }
+        else if (strcmp(child->type, "simple_expression_times") == 0){
+            fprintf(file, "\tR[1] = %s;\n", find_symbol(lhs_node->type)->value);
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tR[2] = %s;\n", rhs_node->type);
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tR[1] = R[1] * R[2];\n");
+            fprintf(file, "\tF24_Time += (1+1+1);\n");
+            fprintf(file, "\tMem[SR] = R[1];\n");
+            fprintf(file, "\tF24_Time += (20+1);\n");
+        }
+        else if (strcmp(child->type, "simple_expression_divide") == 0){
+            fprintf(file, "\tR[1] = %s;\n", find_symbol(lhs_node->type)->value);
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tR[2] = %s;\n", rhs_node->type);
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tR[1] = R[1] / R[2];\n");
+            fprintf(file, "\tF24_Time += (1+1+1);\n");
+            fprintf(file, "\tMem[SR] = R[1];\n");
+            fprintf(file, "\tF24_Time += (20+1);\n");
+        }
+        else if (strcmp(child->type, "simple_expression_mod") == 0){
+            fprintf(file, "\tR[1] = %s;\n", find_symbol(lhs_node->type)->value);
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tR[2] = %s;\n", rhs_node->type);
+            fprintf(file, "\tF24_Time += 1;\n");
+            fprintf(file, "\tR[1] = R[1] %% R[2];\n");
+            fprintf(file, "\tF24_Time += (1+1+1);\n");
+            fprintf(file, "\tMem[SR] = R[1];\n");
+            fprintf(file, "\tF24_Time += (20+1);\n");
         }
     }
     ////////////////////////////////////////////////////////////////////////////////
-    if (strcmp(node->type, "logical_expression_lt") == 0){
-
+    if (strcmp(node->type, "expression_logical") == 0){
+        
     }
     else if (strcmp(node->type, "logical_expression_lt") == 0){
         
